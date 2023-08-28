@@ -478,12 +478,12 @@ Window XDefaultRootWindow(display)
 
 Both return the root window for the default screen.
 
+###### DefaultScreenOfDisplay
 
-
-## DefaultScreenOfDisplay
-
-```
-DefaultScreenOfDisplay(**display**) Screen *XDefaultScreenOfDisplay(**display**)      Display ***display**; 
+```c
+DefaultScreenOfDisplay(display) 
+Screen *XDefaultScreenOfDisplay(display)      
+    Display *display; 
 ```
 
 | **display** | Specifies the connection to the X server. |
@@ -492,12 +492,13 @@ DefaultScreenOfDisplay(**display**) Screen *XDefaultScreenOfDisplay(**display**)
 
 Both return a pointer to the default screen.
 
+###### ScreensOfDisplay
 
-
-## ScreensOfDisplay
-
-```
-ScreenOfDisplay(**display**, **screen_number**) Screen *XScreenOfDisplay(**display**, **screen_number**)      Display ***display**;      int **screen_number**; 
+```c
+ScreenOfDisplay(display, screen_number) 
+Screen *XScreenOfDisplay(display, screen_number)      
+    Display *display;      
+	int screen_number; 
 ```
 
 | **display**       | Specifies the connection to the X server.                   |
@@ -506,12 +507,12 @@ ScreenOfDisplay(**display**, **screen_number**) Screen *XScreenOfDisplay(**displ
 
 Both return a pointer to the indicated screen.
 
+###### DefaultScreen
 
-
-## DefaultScreen
-
-```
-DefaultScreen(**display**) int XDefaultScreen(**display**)      Display ***display**; 
+```c
+DefaultScreen(display) 
+int XDefaultScreen(display)      
+    Display *display; 
 ```
 
 | **display** | Specifies the connection to the X server. |
@@ -520,12 +521,13 @@ DefaultScreen(**display**) int XDefaultScreen(**display**)      Display ***displ
 
 Both return the default screen number referenced by the **[XOpenDisplay()](https://tronche.com/gui/x/xlib/display/opening.html)** function. This macro or function should be used to retrieve the screen number in applications that will use only a single screen.
 
+###### DefaultVisual
 
-
-## DefaultVisual
-
-```
-DefaultVisual(**display**, **screen_number**) Visual *XDefaultVisual(**display**, **screen_number**)      Display ***display**;      int **screen_number**; 
+```c
+DefaultVisual(display, screen_number) 
+Visual *XDefaultVisual(display, screen_number)      
+    Display *display;      
+	int screen_number; 
 ```
 
 | **display**       | Specifies the connection to the X server.                   |
@@ -534,12 +536,13 @@ DefaultVisual(**display**, **screen_number**) Visual *XDefaultVisual(**display**
 
 Both return the default visual type for the specified screen. For further information about visual types, see section 3.1.
 
+###### DisplayCells
 
-
-## DisplayCells
-
-```
-DisplayCells(**display**, **screen_number**) int XDisplayCells(**display**, **screen_number**)      Display ***display**;      int **screen_number**; 
+```c
+DisplayCells(display, screen_number) 
+int XDisplayCells(display, screen_number)      
+    Display *display;      
+	int screen_number; 
 ```
 
 | **display**       | Specifies the connection to the X server.                   |
@@ -548,12 +551,13 @@ DisplayCells(**display**, **screen_number**) int XDisplayCells(**display**, **sc
 
 Both return the number of entries in the default colormap.
 
+###### DisplayPlanes
 
-
-## DisplayPlanes
-
-```
-DisplayPlanes(**display**, **screen_number**) int XDisplayPlanes(**display**, **screen_number**)      Display ***display**;      int **screen_number**; 
+```c
+DisplayPlanes(display, screen_number) 
+int XDisplayPlanes(display, screen_number)      
+    Display *display;      
+	int screen_number; 
 ```
 
 | **display**       | Specifies the connection to the X server.                   |
@@ -562,12 +566,12 @@ DisplayPlanes(**display**, **screen_number**) int XDisplayPlanes(**display**, **
 
 Both return the depth of the root window of the specified screen. For an explanation of depth, see the [glossary](https://tronche.com/gui/x/xlib/glossary/).
 
+###### DisplayString
 
-
-## DisplayString
-
-```
-DisplayString(**display**) char *XDisplayString(**display**)      Display ***display**; 
+```c
+DisplayString(display) 
+char *XDisplayString(display)      
+    Display *display; 
 ```
 
 | **display** | Specifies the connection to the X server. |
@@ -576,12 +580,11 @@ DisplayString(**display**) char *XDisplayString(**display**)      Display ***dis
 
 Both return the string that was passed to **[XOpenDisplay()](https://tronche.com/gui/x/xlib/display/opening.html)** when the current display was opened. On POSIX-conformant systems, if the passed string was NULL, these return the value of the DISPLAY environment variable when the current display was opened. These are useful to applications that invoke the **fork** system call and want to open a new connection to the same display from the child process as well as for printing error messages.
 
+###### XExtendedMaxRequestSize
 
-
-## XExtendedMaxRequestSize
-
-```
-long XExtendedMaxRequestSize(**display**) Display ***display**; 
+```c
+long XExtendedMaxRequestSize(display) 
+	Display *display; 
 ```
 
 | **display** | Specifies the connection to the X server. |
@@ -673,12 +676,13 @@ int XQLength(display)
 
 Both return the length of the event queue for the connected display. Note that there may be more events that have not been read into the queue yet (see **[XEventsQueued()](https://tronche.com/gui/x/xlib/event-handling/XEventsQueued.html)**).
 
+###### RootWindow
 
-
-## RootWindow
-
-```
-RootWindow(**display**, **screen_number**) Window XRootWindow(**display**, **screen_number**)      Display ***display**;      int **screen_number**; 
+```c
+RootWindow(display, screen_number) 
+Window XRootWindow(display, screen_number)      
+    Display *display;      
+	int screen_number; 
 ```
 
 | **display**       | Specifies the connection to the X server.                   |
@@ -687,12 +691,12 @@ RootWindow(**display**, **screen_number**) Window XRootWindow(**display**, **scr
 
 Both return the root window. These are useful with functions that need a drawable of a particular screen and for creating top-level windows.
 
+###### ScreenCount
 
-
-## ScreenCount
-
-```
-ScreenCount(**display**) int XScreenCount(**display**)      Display ***display**; 
+```c
+ScreenCount(display) 
+int XScreenCount(display)      
+    Display *display; 
 ```
 
 | **display** | Specifies the connection to the X server. |
@@ -701,12 +705,12 @@ ScreenCount(**display**) int XScreenCount(**display**)      Display ***display**
 
 Both return the number of available screens.
 
+###### ServerVendor
 
-
-## ServerVendor
-
-```
-ServerVendor(**display**) char *XServerVendor(**display**)      Display ***display**; 
+```c
+ServerVendor(display) 
+char *XServerVendor(display)      
+    Display *display; 
 ```
 
 | **display** | Specifies the connection to the X server. |
@@ -715,12 +719,12 @@ ServerVendor(**display**) char *XServerVendor(**display**)      Display ***displ
 
 Both return a pointer to a null-terminated string that provides some identification of the owner of the X server implementation. If the data returned by the server is in the Latin Portable Character Encoding, then the string is in the Host Portable Character Encoding. Otherwise, the contents of the string are implementation dependent.
 
+###### VendorRelease
 
-
-## VendorRelease
-
-```
-VendorRelease(**display**) int XVendorRelease(**display**)      Display ***display**; 
+```c
+VendorRelease(display) 
+int XVendorRelease(display)      
+    Display *display; 
 ```
 
 | **display** | Specifies the connection to the X server. |
@@ -731,27 +735,438 @@ Both return a number related to a vendor's release of the X server.
 
 
 
+##### 2.2.2 Image Format Functions and Macros
+
+应用程序需要以server所要求的方式向Xserver提供数据；为了帮助应用程序简化，转化数据所需要的大多数工作由Xlib所提供 (see "[Transferring Images between Client and Server](https://tronche.com/gui/x/xlib/graphics/images.html)" and "[Manipulating Images](https://tronche.com/gui/x/xlib/utilities/manipulating-images.html)").
+
+结构体XPixmapFormatValues 为链接建立时返回的bitmap格式信息 提供了一个接口，这个结构体如下：
+
+```c
+typedef struct {
+	int depth;
+	int bits_per_pixel;
+	int scanline_pad;
+} XPixmapFormatValues;
+```
+
+###### XListPixmapFormats
+
+To obtain the pixmap format information for a given display, use **XListPixmapFormats()** .
+
+```c
+XPixmapFormatValues *XListPixmapFormats(display, count_return)      Display *display;      int *count_return; 
+```
+
+| **display**      | Specifies the connection to the X server.                    |
+| ---------------- | ------------------------------------------------------------ |
+| **count_return** | Returns the number of pixmap formats that are supported by the display. |
+
+The **XListPixmapFormats()** function returns an array of [XPixmapFormatValues](https://tronche.com/gui/x/xlib/display/image-format-macros.html#XPixmapFormatValues) structures that describe the types of Z format images supported by the specified display. If insufficient memory is available, **XListPixmapFormats** returns NULL. To free the allocated storage for the [XPixmapFormatValues](https://tronche.com/gui/x/xlib/display/image-format-macros.html#XPixmapFormatValues) structures, use **[XFree()](https://tronche.com/gui/x/xlib/display/XFree.html)**.
+
+The following lists the C language macros, their corresponding function equivalents that are for other language bindings, and what data they both return for the specified server and screen. These are often used by toolkits as well as by simple applications.
+
+###### ImageByteOrder
+
+```c
+ImageByteOrder(display) 
+int XImageByteOrder(display)      
+    Display *display; 
+```
+
+| **display** | Specifies the connection to the X server. |
+| ----------- | ----------------------------------------- |
+|             |                                           |
+
+Both specify the required byte order for images for each scanline unit in XY format (bitmap) or for each pixel value in Z format. The macro or function can return either **LSBFirst** or **MSBFirst** .
+
+###### BitmapUnit
+
+```c
+BitmapUnit(display) 
+int XBitmapUnit(display)      
+    Display *display; 
+```
+
+| **display** | Specifies the connection to the X server. |
+| ----------- | ----------------------------------------- |
+|             |                                           |
+
+Both return the size of a bitmap's scanline unit in bits. The scanline is calculated in multiples of this value.
+
+###### BitmapBitOrder
+
+```c
+BitmapBitOrder(display) 
+int XBitmapBitOrder(display)      
+    Display *display; 
+```
+
+| **display** | Specifies the connection to the X server. |
+| ----------- | ----------------------------------------- |
+|             |                                           |
+
+Within each bitmap unit, the left-most bit in the bitmap as displayed on the screen is either the least-significant or most-significant bit in the unit. This macro or function can return **LSBFirst** or **MSBFirst**.
+
+###### BitmapPad
+
+```c
+BitmapPad(display) 
+int XBitmapPad(display)      
+    Display *display; 
+```
+
+| **display** | Specifies the connection to the X server. |
+| ----------- | ----------------------------------------- |
+|             |                                           |
+
+Each scanline must be padded to a multiple of bits returned by this macro or function.
+
+###### DisplayHeight
+
+```c
+DisplayHeight(display, screen_number) 
+int XDisplayHeight(display, screen_number)      
+    Display *display;      
+	int screen_number; 
+```
+
+| **display**       | Specifies the connection to the X server.                   |
+| ----------------- | ----------------------------------------------------------- |
+| **screen_number** | Specifies the appropriate screen number on the host server. |
+
+Both return an integer that describes the height of the screen in pixels.
+
+###### DisplayHeightMM
+
+```c
+DisplayHeightMM(display, screen_number) 
+int XDisplayHeightMM(display, screen_number)      
+    Display *display;      
+	int screen_number; 
+```
+
+| **display**       | Specifies the connection to the X server.                   |
+| ----------------- | ----------------------------------------------------------- |
+| **screen_number** | Specifies the appropriate screen number on the host server. |
+
+Both return the height of the specified screen in millimeters.
+
+###### DisplayWidth
+
+```c
+DisplayWidth(display, screen_number) 
+int XDisplayWidth(display, screen_number)      
+    Display *display;      
+	int screen_number; 
+```
 
 
 
+| **display**       | Specifies the connection to the X server.                   |
+| ----------------- | ----------------------------------------------------------- |
+| **screen_number** | Specifies the appropriate screen number on the host server. |
+
+Both return the width of the screen in pixels.
+
+###### DisplayWidthMM
+
+```c
+DisplayWidthMM(display, screen_number) 
+int XDisplayWidthMM(display, screen_number)      
+    Display *display;      
+	int screen_number; 
+```
+
+| **display**       | Specifies the connection to the X server.                   |
+| ----------------- | ----------------------------------------------------------- |
+| **screen_number** | Specifies the appropriate screen number on the host server. |
+
+Both return the width of the specified screen in millimeters.
 
 
 
+##### 2.2.3  Screen Information Macros
 
+###### BlackPixelOfScreen
 
+```c
+BlackPixelOfScreen(screen) 
+unsigned long XBlackPixelOfScreen(screen)      
+    Screen *screen; 
+```
 
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
 
+Both return the black pixel value of the specified screen.
 
+###### WhitePixelOfScreen
 
+```c
+WhitePixelOfScreen(screen)
+unsigned long XWhitePixelOfScreen(screen)
+      Screen *screen;
+```
 
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
 
+Both return the white pixel value of the specified screen.
 
+###### CellsOfScreen
 
+```c
+CellsOfScreen(screen) 
+int XCellsOfScreen(screen)      
+    Screen *screen; 
+```
 
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
 
+Both return the number of colormap cells in the default colormap of the specified screen.
 
+###### DefaultColormapOfScreen
 
+```c
+DefaultColormapOfScreen(screen) 
+Colormap XDefaultColormapOfScreen(screen)      
+	Screen *screen; 
+```
 
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the default colormap of the specified screen.
+
+###### DefaultDepthOfScreen
+
+```c
+DefaultDepthOfScreen(screen)
+
+int XDefaultDepthOfScreen(screen)
+      Screen *screen;
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the depth of the root window.
+
+###### DefaultGCOfScreen
+
+```c
+DefaultGCOfScreen(screen)
+
+GC XDefaultGCOfScreen(screen)
+      Screen *screen;
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return a default graphics context (GC) of the specified screen, which has the same depth as the root window of the screen. The GC must never be freed.
+
+###### DefaultVisualOfScreen
+
+```c
+DefaultVisualOfScreen(screen)
+
+Visual *XDefaultVisualOfScreen(screen)
+      Screen *screen;
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the default visual of the specified screen. For information on visual types, see "[Visual Types](https://tronche.com/gui/x/xlib/window/visual-types.html)".
+
+###### DoesBackingStore
+
+```c
+DoesBackingStore(screen)
+
+int XDoesBackingStore(screen)
+      Screen *screen;
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return a value indicating whether the screen supports backing stores. The value returned can be one of **WhenMapped**, **NotUseful**, or **Always** (see "[Backing Store Attribute](https://tronche.com/gui/x/xlib/window/attributes/backing-store.html)").
+
+###### DoesSaveUnders
+
+```c
+DoesSaveUnders(screen)
+
+Bool XDoesSaveUnders(screen)
+      Screen *screen;
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return a Boolean value indicating whether the screen supports save unders. If **True**, the screen supports save unders. If **False**, the screen does not support save unders (see "[Save Under Flag](https://tronche.com/gui/x/xlib/window/attributes/save-under.html)").
+
+###### DisplayOfScreen
+
+```c
+DisplayOfScreen(screen)
+
+Display *XDisplayOfScreen(screen)
+      Screen *screen;
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the display of the specified screen.
+
+###### ScreenNumberOfScreen
+
+.FD 0 int XScreenNumberOfScreen(**screen**) [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) ***screen**; .FN .IP **screen** 1i Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure.
+
+The **XScreenNumberOfScreen()** function returns the screen index number of the specified screen.
+
+###### EventMaskOfScreen
+
+```c
+EventMaskOfScreen(screen)
+
+long XEventMaskOfScreen(screen)
+      Screen *screen;
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the event mask of the root window for the specified screen at connection setup time.
+
+###### WidthOfScreen
+
+```c
+WidthOfScreen(screen) 
+int XWidthOfScreen(screen)      
+	Screen *screen; 
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the width of the specified screen in pixels.
+
+###### HeightOfScreen
+
+```c
+HeightOfScreen(screen)
+
+int XHeightOfScreen(screen)
+      Screen *screen;
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the height of the specified screen in pixels.
+
+###### WidthMMOfScreen
+
+```c
+WidthMMOfScreen(screen)
+
+int XWidthMMOfScreen(screen)
+      Screen *screen;
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the width of the specified screen in millimeters.
+
+###### HeightMMOfScreen
+
+```c
+HeightMMOfScreen(screen) 
+int XHeightMMOfScreen(screen)      
+	Screen *screen; 
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the height of the specified screen in millimeters.
+
+###### MaxCmapsOfScreen
+
+```c
+MaxCmapsOfScreen(screen) 
+int XMaxCmapsOfScreen(screen)      
+	Screen *screen; 
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the maximum number of installed colormaps supported by the specified screen (see "[Managing Installed Colormaps](https://tronche.com/gui/x/xlib/window-and-session-manager/managing-installed-colormap.html)").
+
+###### MinCmapsOfScreen
+
+```c
+MinCmapsOfScreen(screen) 
+int XMinCmapsOfScreen(screen)      
+	Screen *screen; 
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the minimum number of installed colormaps supported by the specified screen (see "[Managing Installed Colormaps](https://tronche.com/gui/x/xlib/window-and-session-manager/managing-installed-colormap.html)").
+
+###### PlanesOfScreen
+
+```c
+PlanesOfScreen(screen) 
+int XPlanesOfScreen(screen)      
+	Screen ***screen**; 
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the depth of the root window.
+
+###### RootWindowOfScreen
+
+```c
+RootWindowOfScreen(screen) 
+Window XRootWindowOfScreen(screen)      
+	Screen *screen; 
+```
+
+| **screen** | Specifies the appropriate [Screen](https://tronche.com/gui/x/xlib/display/opening.html#Screen) structure. |
+| ---------- | ------------------------------------------------------------ |
+|            |                                                              |
+
+Both return the root window of the specified screen.
 
 
 
