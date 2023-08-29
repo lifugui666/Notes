@@ -346,6 +346,8 @@ Xserver或许实现了多种不同的接入机制(see "[Controlling Host Access]
 
 xlib提供了诸多实用的宏和对应的函数来从Display结构体中返回信息，宏是给C语言用的，对应的函数则是给其他函数用的；
 
+同时， 下面会提到 **[XDisplayWidth()](https://tronche.com/gui/x/xlib/display/image-format-macros.html#DisplayWidth)**, **[XDisplayHeight()](https://tronche.com/gui/x/xlib/display/image-format-macros.html#DisplayHeight)**, **[XDisplayCells()](https://tronche.com/gui/x/xlib/display/display-macros.html#DisplayCells)**, **[XDisplayPlanes()](https://tronche.com/gui/x/xlib/display/display-macros.html#DisplayPlanes)**, **[XDisplayWidthMM()](https://tronche.com/gui/x/xlib/display/image-format-macros.html#DisplayWidthMM)**, 和 **[XDisplayHeightMM()](https://tronche.com/gui/x/xlib/display/image-format-macros.html#DisplayHeightMM)** 函数，这些函数真的应该被命名为ScreenXXX而不是DisplayXXX，这是我们的过错，对造成的困扰我们表示歉意；
+
 ##### 2.2.1 Display Macros
 
 应用软件不应该直接修改Display或者Screen结构体中的内容，这些成员应该是只读的，尽管他们可能会因为一些操作被改变；
@@ -1167,6 +1169,150 @@ Window XRootWindowOfScreen(screen)
 |            |                                                              |
 
 Both return the root window of the specified screen.
+
+
+
+#### 2.4 释放Client所创建的数据
+
+使用XFree()来释放Xlib所创建的内存数据；
+
+##### Syntax
+
+```c
+XFree(data)     void *data;  
+```
+
+##### Arguments
+
+| **data** | 指明需要被释放的数据 |
+| -------- | -------------------- |
+|          |                      |
+
+##### Description
+
+XFree()函数是一个通用的Xlib例行程序，这个函数是用来释放指定的数据的；你必须使用这个函数来释放任何由Xlib创建的对象，除非有特别指明必须使用另一个函数去释放指定的对象；这个函数不接受NULL指针作为参数；
+
+#### 关闭Display
+
+要关闭一个display或者同Xserver断开链接，使用 **[XCloseDisplay()](https://tronche.com/gui/x/xlib/display/XCloseDisplay.html)**.
+
+Xlib也提供了一个函数，允许client的数据在client的链接被关闭后仍旧保存，使用**[XSetCloseDownMode()](https://tronche.com/gui/x/xlib/display/XSetCloseDownMode.html)**改变client的模式；
+
+
+
+### 第三章：Window Function
+
+在X Window System下，window指的是一个矩形区域，这个区域可以让你进行图像输出；client应用可以在由Xserver驱动的一个或者多个screen上堆叠和嵌套一个或者多个window；想要创建window的client必须先使用 **[XOpenDisplay()](https://tronche.com/gui/x/xlib/display/opening.html)** 创建和Xserver的链接；这个章节将会从讨论可见的类型和window属性开始；这个章节将会讨论如下你可以用到的Xlib函数：
+
+- [Create windows](https://tronche.com/gui/x/xlib/window/create.html)
+- [Destroy windows](https://tronche.com/gui/x/xlib/window/destroy.html)
+- [Map windows](https://tronche.com/gui/x/xlib/window/map.html)
+- [Unmap windows](https://tronche.com/gui/x/xlib/window/unmap.html)
+- [Configure windows](https://tronche.com/gui/x/xlib/window/configure.html)
+- [Change the stacking order](https://tronche.com/gui/x/xlib/window/stacking-order.html)
+- [Change window attributes](https://tronche.com/gui/x/xlib/window/change-attributes.html)
+
+这个章节也会区分可能会产生event的window动作
+
+请注意：你的应用软件要遵守和window managers建立起来的通信规范，这样才能与使用中的各种manager正常的工作；(see section "[Client to Window Manager Communication](https://tronche.com/gui/x/xlib/ICC/client-to-window-manager/)"). 通常工具集会帮你遵守这个规范，从而减轻你的负担；工具包也会时常使用自己的版本取代这章中提到的功能，因此你应该多多查阅你自己使用的工具包的文档； 
+
+
+
+#### 3.3 创建window
+
+xlib提供了创建windos的基础方法，工具包经常会提供更多的高级功能，专用于创建和放置top-level window（root 的直属child），这些内容将在适合的工具包文档中介绍；如果你压根不用工具包，那么你就必须要使用 **[Xlib inter-client communication functions](https://tronche.com/gui/x/xlib/ICC/)**给window manager提供一些标准信息或者提示；
+
+如果你使用Xlib去创建你自己的top-level windows，你必须遵守下面的规则以便所有的应用可以在不同风格的window manager下有序的互动；
+
+- 你不应该和window manager去争夺top-window的尺寸和位置 
+
+  
+
+- 你必须有处理你获得的任何大小的窗口，哪怕这个窗口只是输出一条文字信息
+
+  
+
+- 你应该只在响应用户要求的时候去尝试调整top-level window的尺寸或者位置；如果尝试调整top-level的请求失败，你也应该准备在这个结果下保持程序正常；你可以随意的在必要的时候改变top-level window的child window  (工具包时常会提供自动重新排版的功能.)
+
+  
+
+- 如果不使用自动设置标准window属性的工具，你就要在top-level window映射他们之前设置他们的属性；
+
+更多的信息请看 "[Inter-Client Communication Functions](https://tronche.com/gui/x/xlib/ICC/)" and the *[Inter-Client Communication Conventions Manual](https://tronche.com/gui/x/icccm/)*.
+
+**[XCreateWindow()](https://tronche.com/gui/x/xlib/window/XCreateWindow.html)** 是一个更加通用的函数，这个函数允许你在创建window的时候设置各种参数； **[XCreateSimpleWindow()](https://tronche.com/gui/x/xlib/window/XCreateWindow.html)** 创建的window可以继承parent的参数
+
+对于图形请求，暴露处理和 **[VisibilityNotify](https://tronche.com/gui/x/xlib/events/window-state-change/visibility.html)**事件，Xserver的反映就好像f **[InputOnly](https://tronche.com/gui/x/xlib/window/create.html#InputClass)**window不存在一样； **[InputOnly](https://tronche.com/gui/x/xlib/window/create.html#InputClass)** window 不能被用作绘制 (that is, as a source or destination for graphics requests). **[InputOnly](https://tronche.com/gui/x/xlib/window/create.html#InputClass)** 和 **InputOutput** windows 在其他的请求方面反应是一样的 (properties, grabs, input control, and so on). 扩展包可以定义其他的window类.
+
+如果要创建一个未映射的window并且设置它的属性使用  **[XCreateWindow()](https://tronche.com/gui/x/xlib/window/XCreateWindow.html)**.
+
+如果想要创建一个 被给定的parent window的 未映射的 **InputOutput** subwindow 使用 **[XCreateSimpleWindow()](https://tronche.com/gui/x/xlib/window/XCreateWindow.html)**.
+
+
+
+#### 销毁windows
+
+Xlib提供了函数，你可以使用这些函数去销毁一个window或者销毁一个window的subwindow
+
+销毁一个window以及其全部的subwindow，请使用 **[XDestroyWindow()](https://tronche.com/gui/x/xlib/window/XDestroyWindow.html)**.
+
+销毁一个window的全部subwindows，请使用 **[XDestroySubWindows()](https://tronche.com/gui/x/xlib/window/XDestroySubWindows.html)**.
+
+#### 映射Windows（mapping windows）
+
+如果一个window调用了 **[XMapWindow()](https://tronche.com/gui/x/xlib/window/XMapWindow.html)**，那么这个window就会被认为是被映射了；如果看不见这个window，那可能是以下几种情况：
+
+- 被其他的window遮盖了
+
+  
+
+- 他的祖先中的一个未被映射
+
+  
+
+- 被它的一个祖先裁剪了
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
