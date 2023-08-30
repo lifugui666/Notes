@@ -82,6 +82,8 @@ https://tronche.com/gui/x/xlib/
 
 这里只做简单的翻译的学习
 
+**请注意：这篇翻译中，所有的dispaly，screen，window不翻译，windows表示window的复数，不是指微软的windows**
+
 ### 第一章：介绍xlib
 
 X windows system是由MIT设计的network-transparent window system；X display server可以运行在一个单色/彩色显示硬件上；server可以将用户的输入分配给位于同一台机器或者网络上其他地方点的各种client，并且接受这些client的输出请求；client和server可以在同一台机器上，也可以在不同的机器上，这点可能会引起我们的困惑，但是这不是重点；
@@ -1250,7 +1252,7 @@ xlib提供了创建windos的基础方法，工具包经常会提供更多的高�
 
 
 
-#### 销毁windows
+#### 3.4 销毁windows
 
 Xlib提供了函数，你可以使用这些函数去销毁一个window或者销毁一个window的subwindow
 
@@ -1258,7 +1260,7 @@ Xlib提供了函数，你可以使用这些函数去销毁一个window或者销�
 
 销毁一个window的全部subwindows，请使用 **[XDestroySubWindows()](https://tronche.com/gui/x/xlib/window/XDestroySubWindows.html)**.
 
-#### 映射Windows（mapping windows）
+#### 3.5 映射Windows（mapping windows）
 
 如果一个window调用了 **[XMapWindow()](https://tronche.com/gui/x/xlib/window/XMapWindow.html)**，那么这个window就会被认为是被映射了；如果看不见这个window，那可能是以下几种情况：
 
@@ -1272,31 +1274,361 @@ Xlib提供了函数，你可以使用这些函数去销毁一个window或者销�
 
 - 被它的一个祖先裁剪了
 
+当一个窗口的一部分或者整个窗口变得可见时，会为窗口生成 **[Expose](https://tronche.com/gui/x/xlib/events/exposure/expose.html)**  事件；client只有在索求这个事件的时候才会接收到Expose事件；当他们未被映射的时候，windows会保留他们在堆叠顺序中的位置；
+
+一个window manager或许想要控制subwindows的放置；如果parent window（一般是root）选中 **[SubstructureRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#SubstructureRedirectMask)** ，那么由其他的child window所发起的 map request 将不会被执行，同时window manager会发送一个**MapRequest** 事件；然而，如果child上的 override-redirect标志被设置为True，那么map request就会被执行；
+
+一个tilling window manager（平铺窗口管理器）可能会决定重定位和调整其他的client的windows，随后才会决定窗口映射到最终位置；一个想要提供装饰的window manager也许会 首先将child 重定父级 到一个框架里；更多的信息请参考 "[Override Redirect Flag](https://tronche.com/gui/x/xlib/window/attributes/override-redirect.html)" 和 "[Window State Change Events](https://tronche.com/gui/x/xlib/events/window-state-change/)"；一次一个client可以选择**[SubstructureRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#SubstructureRedirectMask)**.（**这里感觉没有翻译好...原文附上**）
+
+*（A tiling window manager might decide to reposition and resize other clients' windows and then decide to map the window to its final location. A window manager that wants to provide decoration might reparent the child into a frame first. For further information, see "[Override Redirect Flag](https://tronche.com/gui/x/xlib/window/attributes/override-redirect.html)" and "[Window State Change Events](https://tronche.com/gui/x/xlib/events/window-state-change/)". Only a single client at a time can select for **[SubstructureRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#SubstructureRedirectMask)**.）*
+
+类似的，单一的client可在parent window上选择 **[ResizeRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ResizeRedirectMask)** ；随后，任何来自其他client的试图重新调整大小的动作将被禁止，并且这个client会收到一个 **[ResizeRequest](https://tronche.com/gui/x/xlib/events/structure-control/resize.html)** 事件；
+
+映射一个给定的window，使用 **[XMapWindow()](https://tronche.com/gui/x/xlib/window/XMapWindow.html)**.
+
+映射并且将这个窗口提升，使用 **[XMapRaised()](https://tronche.com/gui/x/xlib/window/XMapRaised.html)**.
+
+映射指定窗口的全部子窗口，使用 **[XMapSubwindows()](https://tronche.com/gui/x/xlib/window/XMapSubwindows.html)**.
+
+#### 3.6 取消映射windows（unmapping windows）
+
+Xlib 提供了让你unmap一个window或者所有subwindow的函数
+
+想要unmap一个window，使用 **[XUnmapWindow()](https://tronche.com/gui/x/xlib/window/XUnmapWindow.html)**.
+
+想要unmap一个指定window的全部subwindow，使用 **[XUnmapSubwindows()](https://tronche.com/gui/x/xlib/window/XUnmapSubwindows.html)**.
 
 
 
+#### 3.7 配置windows（configuring windows）
+
+Xlib provides functions that you can use to move a window, resize a window, move and resize a window, or change a window's border width. To change one of these parameters, set the appropriate member of the **XWindowChanges** structure and OR in the corresponding value mask in subsequent calls to **[XConfigureWindow()](https://tronche.com/gui/x/xlib/window/XConfigureWindow.html)**. The symbols for the value mask bits and the **XWindowChanges** structure are:
+
+```c
+/* Configure window value mask bits */
+
+#define CWX		(1<<0)
+#define CWY		(1<<1)
+#define CWWidth		(1<<2)
+#define CWHeight	(1<<3)
+#define CWBorderWidth	(1<<4)
+#define CWSibling	(1<<5)
+#define CWStackMode	(1<<6)
+```
 
 
 
+```c
+/* Values */
+
+typedef struct {
+	int x, y;
+	int width, height;
+	int border_width;
+	Window sibling;
+	int stack_mode;
+} XWindowChanges;
+```
+
+The x and y members are used to set the window's x and y coordinates, which are relative to the parent's origin and indicate the position of the upper-left outer corner of the window. The width and height members are used to set the inside size of the window, not including the border, and must be nonzero, or a **BadValue** error results. Attempts to configure a root window have no effect.
+
+The border_width member is used to set the width of the border in pixels. Note that setting just the border width leaves the outer-left corner of the window in a fixed position but moves the absolute position of the window's origin. If you attempt to set the border-width attribute of an **[InputOnly](https://tronche.com/gui/x/xlib/window/create.html#InputClass)** window nonzero, a **BadMatch** error results.
+
+The sibling member is used to set the sibling window for stacking operations. The stack_mode member is used to set how the window is to be restacked and can be set to **Above**, **Below**, **TopIf**, .PN BottomIf , or **Opposite**.
+
+If the [override-redirect](https://tronche.com/gui/x/xlib/window/attributes/override-redirect.html) flag of the window is **False** and if some other client has selected **[SubstructureRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#SubstructureRedirectMask)** on the parent, the X server generates a **[ConfigureRequest](https://tronche.com/gui/x/xlib/events/structure-control/configure.html)** event, and no further processing is performed. Otherwise, if some other client has selected **[ResizeRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ResizeRedirectMask)** on the window and the inside width or height of the window is being changed, a **[ResizeRequest](https://tronche.com/gui/x/xlib/events/structure-control/resize.html)** event is generated, and the current inside width and height are used instead. Note that the override-redirect flag of the window has no effect on **[ResizeRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ResizeRedirectMask)** and that **[SubstructureRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#SubstructureRedirectMask)** on the parent has precedence over **[ResizeRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ResizeRedirectMask)** on the window.
+
+When the geometry of the window is changed as specified, the window is restacked among siblings, and a **[ConfigureNotify](https://tronche.com/gui/x/xlib/events/window-state-change/configure.html)** event is generated if the state of the window actually changes. **[GravityNotify](https://tronche.com/gui/x/xlib/events/window-state-change/gravity.html)** events are generated after **[ConfigureNotify](https://tronche.com/gui/x/xlib/events/window-state-change/configure.html)** events. If the inside width or height of the window has actually changed, children of the window are affected as specified.
+
+If a window's size actually changes, the window's subwindows move according to their window gravity. Depending on the window's bit gravity, the contents of the window also may be moved (see "[Gravity Attributes](https://tronche.com/gui/x/xlib/window/attributes/gravity.html)").
+
+If regions of the window were obscured but now are not, exposure processing is performed on these formerly obscured windows, including the window itself and its inferiors. As a result of increasing the width or height, exposure processing is also performed on any new regions of the window and any regions where window contents are lost.
+
+The restack check (specifically, the computation for **BottomIf**, **TopIf**, and **Opposite**) is performed with respect to the window's final size and position (as controlled by the other arguments of the request), not its initial position. If a sibling is specified without a stack_mode, a **BadMatch** error results.
+
+If a sibling and a stack_mode are specified, the window is restacked as follows:
 
 
 
+| **Above**    | The window is placed just above the sibling.                 |
+| ------------ | ------------------------------------------------------------ |
+| **Below**    | The window is placed just below the sibling.                 |
+| **TopIf**    | If the sibling occludes the window, the window is placed at the top of the stack. |
+| **BottomIf** | If the window occludes the sibling, the window is placed at the bottom of the stack. |
+| **Opposite** | If the sibling occludes the window, the window is placed at the top of the stack. If the window occludes the sibling, the window is placed at the bottom of the stack. |
 
 
 
+If a stack_mode is specified but no sibling is specified, the window is restacked as follows:
 
 
 
+| **Above**    | The window is placed at the top of the stack.                |
+| ------------ | ------------------------------------------------------------ |
+| **Below**    | The window is placed at the bottom of the stack.             |
+| **TopIf**    | If any sibling occludes the window, the window is placed at the top of the stack. |
+| **BottomIf** | If the window occludes any sibling, the window is placed at the bottom of the stack. |
+| **Opposite** | If any sibling occludes the window, the window is placed at the top of the stack. If the window occludes any sibling, the window is placed at the bottom of the stack. |
 
 
 
+Attempts to configure a root window have no effect.
+
+To configure a window's size, location, stacking, or border, use **[XConfigureWindow()](https://tronche.com/gui/x/xlib/window/XConfigureWindow.html)**.
+
+To move a window without changing its size, use **[XMoveWindow()](https://tronche.com/gui/x/xlib/window/XMoveWindow.html)**.
+
+To change a window's size without changing the upper-left coordinate, use **[XResizeWindow()](https://tronche.com/gui/x/xlib/window/XResizeWindow.html)**.
+
+To change the size and location of a window, use **[XMoveResizeWindow()](https://tronche.com/gui/x/xlib/window/XMoveResizeWindow.html)**.
+
+To change the border width of a given window, use **[XSetWindowBorderWidth()](https://tronche.com/gui/x/xlib/window/XSetWindowBorderWidth.html)**.
 
 
 
+#### 3.8 改变window堆叠顺序（changing window stacking order）
+
+Xlib提供能够用于提升window的层级，降低window层级，循环windows，重新堆叠windows的函数； 
+
+用于提升window层级，让其兄弟windows无法遮盖它，请使用 **[XRaiseWindow()](https://tronche.com/gui/x/xlib/window/XRaiseWindow.html)**.
+
+用于降低woindow层级，让它无法在遮盖它的兄弟windows，使用 **[XLowerWindow()](https://tronche.com/gui/x/xlib/window/XLowerWindow.html)**.
+
+以正向或者反向让subwindows循环，使用  **[XCirculateSubwindows()](https://tronche.com/gui/x/xlib/window/XCirculateSubwindows.html)**.
+
+让一个部分或者全部被其他child遮盖的层级最低的child上升，使用  **[XCirculateSubwindowsUp()](https://tronche.com/gui/x/xlib/window/XCirculateSubwindowsUp.html)**.
+
+将最高层级的child的层级降低，使用 **[XCirculateSubwindowsDown()](https://tronche.com/gui/x/xlib/window/XCirculateSubwindowsDown.html)**.
+
+将一个windows集合重新按照顶到底的顺序排序，使用 **[XRestackWindows()](https://tronche.com/gui/x/xlib/window/XRestackWindows.html)**.
 
 
 
+#### 3.9 更改window的属性（Changing Window Attributes）
 
+xlib提供了用于更改window属性的函数； **[XChangeWindowAttributes()](https://tronche.com/gui/x/xlib/window/XChangeWindowAttributes.html)** 是一个更加通用的函数，这个函数允许你修改一个或者多个由 [XSetWindowAttributes](https://tronche.com/gui/x/xlib/window/attributes/#XSetWindowAttributes) 结构体所提供的属性；这节描述的其他函数也允许你单独的修改某一特定的属性，例如背景；
+
+想要更改给定的window的一个或者多个属性，请使用 **[XChangeWindowAttributes()](https://tronche.com/gui/x/xlib/window/XChangeWindowAttributes.html)**.
+
+想要将window的背景更改为给定的像素，使用**[XSetWindowBackground()](https://tronche.com/gui/x/xlib/window/XSetWindowBackground.html)**.
+
+想要将window的背景更改为给定的pixmap，使用 **[XSetWindowBackgroundPixmap()](https://tronche.com/gui/x/xlib/window/XSetWindowBackgroundPixmap.html)**.
+
+想要以给定的像素更改，重绘window的边界，使用 **[XSetWindowBorder()](https://tronche.com/gui/x/xlib/window/XSetWindowBorder.html)**.
+
+想要改变给定的window的border tile，使用  **[XSetWindowBorderPixmap()](https://tronche.com/gui/x/xlib/window/XSetWindowBorderPixmap.html)**.
+
+想要给给定的window设置colormap，使用 **[XSetWindowColormap()](https://tronche.com/gui/x/xlib/window/XSetWindowColormap.html)**.
+
+想要指定window中被使用的光标，使用 **[XDefineCursor()](https://tronche.com/gui/x/xlib/window/XDefineCursor.html)**.
+
+想要取消给定window的光标定义，使用 **[XUndefineCursor()](https://tronche.com/gui/x/xlib/window/XUndefineCursor.html)**.
+
+
+
+### 第四章：Window Information Function
+
+在你将display连接了Xserver并且创建了一个window之后，你就可以使用Xlib window information函数以实现一下功能 ：
+
+- Obtain information about a window
+
+  
+
+- Translate screen coordinates
+
+  
+
+- Manipulate property lists
+
+  
+
+- Obtain and change window properties
+
+  
+
+- [Manipulate selections](https://tronche.com/gui/x/xlib/window-information/selection.html)
+
+#### 4.1 获取window信息（ Obtaining Window Information）
+
+xlib提供了用于获取window tree，window的当前的信息，window当前的几何信息或者当前指针的坐标 的信息的函数；由于这些信息会非常频繁的被window manager所用到，这些函数都会返回一个状态用来表明这个window是否存在；
+
+想要给定window的parent，children列表和children数量，用 **[XQueryTree()](https://tronche.com/gui/x/xlib/window-information/XQueryTree.html)**.
+
+想要获得给定的window的当前的属性，使用 **[XGetWindowAttributes()](https://tronche.com/gui/x/xlib/window-information/XGetWindowAttributes.html)**.
+
+想要获取当前可绘制对象的几何图形，使用**[XGetGeometry()](https://tronche.com/gui/x/xlib/window-information/XGetGeometry.html)**.
+
+*(To obtain the current geometry of a given drawable, use **[XGetGeometry()](https://tronche.com/gui/x/xlib/window-information/XGetGeometry.html)**. 这里我不是很理解什么叫geometry )*
+
+
+
+#### 4.2 变换屏幕坐标系（ Translating Screen Coordinates）
+
+应用软件有时候需要 从一个window的坐标空间转移到另一个window，或者需要确定鼠标等设备当前在那个window上；**[XTranslateCoordinates()](https://tronche.com/gui/x/xlib/window-information/XTranslateCoordinates.html)** 和 **[XQueryPointer()](https://tronche.com/gui/x/xlib/window-information/XQueryPointer.html)** 可以通过要求Xserver去执行这些操作来完美的覆盖这些需求；
+
+想要获取指针的screen坐标或者要确定指针相对给定window的坐标，使用 **[XQueryPointer()](https://tronche.com/gui/x/xlib/window-information/XQueryPointer.html)**.
+
+
+
+#### 4.3 Properties and Atoms
+
+（lifugui的吐槽：说实话英语里的property和attribute这两个词，我都会翻译成属性，这两个词确实难以区分，甚至有些文档里也会混用这两个词，严格来说的话property更倾向于特有的属性，也就是特性，而attribute则倾向于普通的属性）
+
+属性（properties）是一些被命名的，被指定了类型的数据的集合；window system有一些预定义的属性（例如：window的名称，尺寸等等）；用户也可以随心所欲的定义其他的信息，并将之与windows捆绑在一起；每一个属性都有一个名称，这个名称是一个ISO Latin-1 字符串（也就是说，这个名称字符串编码是有规范的）；对于每一个被命名的属性，都有一个独特的标识（**atom**）和它关联在一起；一个属性也有一个类型，比如string或者int；这些类型同样也使用atom去表示，所以我们可以随意定义新的类型；只有一种类型的数据多半与一个属性名称相关联；client可以存储和查询取用与window相关联的属性；为了性能考量，我们应该使用atom而不是使用string；**[XInternAtom()](https://tronche.com/gui/x/xlib/window-information/XInternAtom.html)** 可以用来获取属性名称的atom 
+
+属性也可能以几种可能的存储方式中的一个进行存储；Xserver可以使用8bit，16bit，32bit量去存储这些信息；这个机制让Xserver可以用client所期望的字节顺序去传递数据；
+
+注意：如果你定义了复杂的类型的属性，你必须自己完成编码和解码；若这个函数要跨平台，那么就要特别小心的编写；至于如何编写扩展库，请参照"[Extensions](https://tronche.com/gui/x/xlib/appendix/c/)".
+
+属性的类型由atom定义，这个atom是可以在type表里任意扩展的；
+
+某些属性名是为了server常用的函数而预定义的；这些atoms定义在 **`X11/Xatom.h`**中；为了避免名称和用户符号冲突，这些atom的定义都有XA_前缀；关于这些属性的定义，下文会写；有关能让你获取和设置这些存储在预定义属性中的信息的方法，参"[Inter-Client Communication Functions](https://tronche.com/gui/x/xlib/ICC/)"
+
+核心协议并没有将任何语义强加在属性名称上，但是其他的X联盟标准指定了名称的语义，例如 *[Inter-Client Communication Conventions Manual](https://tronche.com/gui/x/icccm/)* 和the *X Logical Font Description Conventions*.（也就是说我们在为属性取名的时候尽量要符合语义的规范）
+
+你可以使用属性在不同的应用之间交流其他的信息；这节所描述的函数能让你在你的应用中定义新的属性，获取唯一的atom ID；
+
+尽管任何特定的atom在每个namespace可以有一些client解释，但是在协议下，atom会出现在五个特定的命名空间下面；
+
+- Selections
+
+  
+
+- Property names
+
+  
+
+- Property types
+
+  
+
+- Font properties
+
+  
+
+- Type of a **[ClientMessage](https://tronche.com/gui/x/xlib/events/client-communication/client-message.html)** event (none are built into the X server)
+
+The built-in selection property names are:
+
+| PRIMARY   |
+| --------- |
+| SECONDARY |
+
+The built-in property names are:
+
+| CUT_BUFFER0     | RESOURCE_MANAGER    |
+| --------------- | ------------------- |
+| CUT_BUFFER1     | WM_CLASS            |
+| CUT_BUFFER2     | WM_CLIENT_MACHINE   |
+| CUT_BUFFER3     | WM_COLORMAP_WINDOWS |
+| CUT_BUFFER4     | WM_COMMAND          |
+| CUT_BUFFER5     | WM_HINTS            |
+| CUT_BUFFER6     | WM_ICON_NAME        |
+| CUT_BUFFER7     | WM_ICON_SIZE        |
+| RGB_BEST_MAP    | WM_NAME             |
+| RGB_BLUE_MAP    | WM_NORMAL_HINTS     |
+| RGB_DEFAULT_MAP | WM_PROTOCOLS        |
+| RGB_GRAY_MAP    | WM_STATE            |
+| RGB_GREEN_MAP   | WM_TRANSIENT_FOR    |
+| RGB_RED_MAP     | WM_ZOOM_HINTS       |
+
+The built-in property types are:
+
+| ARC      | POINT         |
+| -------- | ------------- |
+| ATOM     | RGB_COLOR_MAP |
+| BITMAP   | RECTANGLE     |
+| CARDINAL | STRING        |
+| COLORMAP | VISUALID      |
+| CURSOR   | WINDOW        |
+| DRAWABLE | WM_HINTS      |
+| FONT     | WM_SIZE_HINTS |
+| INTEGER  |               |
+| PIXMAP   |               |
+
+The built-in font property names are:
+
+| MIN_SPACE           | STRIKEOUT_DESCENT |
+| ------------------- | ----------------- |
+| NORM_SPACE          | STRIKEOUT_ASCENT  |
+| MAX_SPACE           | ITALIC_ANGLE      |
+| END_SPACE           | X_HEIGHT          |
+| SUPERSCRIPT_X       | QUAD_WIDTH        |
+| SUPERSCRIPT_Y       | WEIGHT            |
+| SUBSCRIPT_X         | POINT_SIZE        |
+| SUBSCRIPT_Y         | RESOLUTION        |
+| UNDERLINE_POSITION  | COPYRIGHT         |
+| UNDERLINE_THICKNESS | NOTICE            |
+| FONT_NAME           | FAMILY_NAME       |
+| FULL_NAME           | CAP_HEIGHT        |
+
+更多关于font属性的信息，请看 "[Font Metrics](https://tronche.com/gui/x/xlib/graphics/font-metrics/)"；
+
+使用**[XInternAtom()](https://tronche.com/gui/x/xlib/window-information/XInternAtom.html)**返回给定名称的atom；使用**[XInternAtoms()](https://tronche.com/gui/x/xlib/window-information/XInternAtoms.html)**返回给定多个名称的atom数组；
+
+返回给定atom id的atom的名字，使用 **[XGetAtomName()](https://tronche.com/gui/x/xlib/window-information/XGetAtomName.html)**.
+
+返回给定的多个atom id的名称数组，使用 **[XGetAtomNames()](https://tronche.com/gui/x/xlib/window-information/XGetAtomNames.html)**.
+
+
+
+#### 4.4 获取/更改window的属性Obtaining and Changing Window Properties
+
+你可以给每个window都附上一个属性表；每个属性都有名称，类型，值（参照 "[Properties and Atoms](https://tronche.com/gui/x/xlib/window-information/properties-and-atoms.html)"）；这个表是由8bit，16bit，32bit变量组成的数组，解释这些数据的权利留给了client；用char表示8bit值，short表示16位值，long表示32bit值；
+
+xlib提供了一些函数，你可以使用这些函数获取，更改，刷新，或者交换window属性；此外xlib也提供了一些有用的函数用于inter-client通信；
+
+To obtain the type, format, and value of a property of a given window, use **[XGetWindowProperty()](https://tronche.com/gui/x/xlib/window-information/XGetWindowProperty.html)**.
+
+To obtain a given window's property list, use **[XListProperties()](https://tronche.com/gui/x/xlib/window-information/XListProperties.html)**.
+
+To change a property of a given window, use **[XChangeProperty()](https://tronche.com/gui/x/xlib/window-information/XChangeProperty.html)**.
+
+To rotate a window's property list, use **[XRotateWindowProperties()](https://tronche.com/gui/x/xlib/window-information/XRotateWindowProperties.html)**.
+
+To delete a property on a given window, use **[XDeleteProperty()](https://tronche.com/gui/x/xlib/window-information/XDeleteProperty.html)**.
+
+
+
+#### 4.5Selection
+
+selections是一种用于应用之间交换数据的方法；通过这种机制，应用可以交换任何类型的数据，可以商定数据的类型；selection可以被认为是一种动态类型的间接属性，比起将属性存在Xserver中，这种属性被存储在client中；selection是全局的（selection被认为是属于用户，但是由client保存的）而非特定window子层级的私有或者client的特定集合；
+
+xlib提供了一些函数，你可以使用这些函数设置，获取，或者请求selection的转换；这些函数使得应用能够实现当前selection的notion，这个notion要求当应用软件不再拥有selection的时候，应当发送一个通知给应用；支持selection的应用时常强调当前selection，因此当其他的应用得到selection的时候必须通知他们，以便他们取消对selection的强调；
+
+当一个client需要selection中的内容时，client就指定了selection目标类型；这个目标类型也许会被用于控制传输内容的表现形式；例如：如果selection是“用户点击的最后一件事”，并且当前是图像，然后，这个目标类型也许就会指定图片的内容是以xy格式发送还是以z格式发送；
+
+目标类型也可以被用于控制被传送的内容的类，例如，要段落selection的"looks"（字体，行间距，缩进...），而不是段落的文本内容；目标类型也可以被用作其他目的；协议并没有限制用法；
+
+To set the selection owner, use **[XSetSelectionOwner()](https://tronche.com/gui/x/xlib/window-information/XSetSelectionOwner.html)**.
+
+To return the selection owner, use **[XGetSelectionOwner()](https://tronche.com/gui/x/xlib/window-information/XGetSelectionOwner.html)**.
+
+To request conversion of a selection, use **[XConvertSelection()](https://tronche.com/gui/x/xlib/window-information/XConvertSelection.html)**.
+
+
+
+### 暂时到此为止，我需要的内容应该已经翻译完成，接下来我要研究一下x协议到底是怎样的模型
+
+![image](./figures/2-1.png)
+
+首先要清楚X11真的是一个很古老的协议了；第11个版本的核心理念是提供机制，而非策略；在这个理念的指导下，40年间X协议通过各种扩展仍旧活跃在业界；
+
+让我们来模拟一个场景：你点了一下chrome浏览器的刷新按钮，这个过程在X的视角上是怎样发生的？
+
+1. 鼠标点击，linux kernel获取倒了来自鼠标的事件，通过evdev输入驱动，内核将点击事件送往Xserver中；这里kernel其实做了很多工作，包括将不同的鼠标发出的不同信号转化为标准evdev输入等；
+2. 随后Xserver会将这个点击事件发送给Xclient，也就是我们的浏览器
+3. 这时候浏览器要做决定，浏览器需要提供按钮的点击反馈，比如我们按下一个按钮，这个按钮应该变色；作为Xclient的浏览器会请求Xserver，希望Xserver能够绘制一下按钮被点击的效果；
+4. Xserver接收到请求之后，需要准备具体的绘制工作流程；Xsever会告知显卡它需要绘制什么图形，然后计算这块区域，在所谓的合成桌面下，Xserver会通知Compositor：按钮的这个区域需要重新绘制一下；
+5. Compositor收到消息之后会从缓存中取得显卡绘制出来的图形，然后会重新合成到整个桌面上；这个动作本身也是一次渲染啊...这就意味着要完成这次绘制，Compositor还需要再向Xserver请求一下：我需要重新画一下这块地方；然后sever回应：ok画吧；才能画完
+
+*解释：上面的流程中有两个东西需要解释一下：*
+
+*首先是合成桌面环境，这个东西相当于一个窗口管理器，他会掌管所有的窗口的输出效果，正因为有这个东西，现在linux的桌面环境才能看起来风格一致，动画效果美观；*
+
+*第二个要解释的模式设置 KMS，linux本身是没有图形界面的，linux默认的界面是是一个80X24的字符输出界面，因此，在很久以前我们想要在linux下进入1024X768或更高分辨率的图形模式时，就需要X进行一次模式设置(实际上就是设置了一下分辨率)，如果你使用过比较早版本的linux图形界面，就会发现在linux启动并且进入图形界面的过程中，屏幕会闪一下，这个闪一下就是模式设置的副作用；后来linux引入和KMS-内核模式设置，这样在linux在显示驱动init完成之后很快就会设置好分辨率和色彩空间，这样就不会那个闪一下了；*
+
+这里要引入一个事实：我们在这篇文章的前面一直在强调X window sys有多么强大，多么厉害，历经多年仍旧在工作；但是事实真的是这样吗？实际上现在X所辐射到的范围正在变小，在X window诞生的时候，它采用的是文字+图形的绘制方案，彼时的图形系统是依靠文字+图形堆砌起来的；现在我们用的不是GTK+就是Qt了，作为跨平台的工具，GTK和Qt没了X真的活不了吗？如果你深入了解当前的开发环境，就会发现人们会使用Cairo图形库和Pango文字库这样的工具，他们支持各种backend，能在X window下工作，也能在MacOS的Quartz下工作，也能在微软的GDI下工作；尽管在linux下他们仍旧是基于X发布的，但是对于他们而言X真的是不可替代的吗？实际上现在X已经从什么都，变得越来越清闲，尽管由于X已经在某种程度上对unix系产生了巨大的影响，但是它或许也不是不可被替代的；
 
 
 
