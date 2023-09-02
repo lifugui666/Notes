@@ -114,7 +114,7 @@ xlib中的许多函数会返回一个整数的资源ID，这个ID允许你调用
 
 client程序是被事件驱动的；事件可能是请求的副产物（例如：重新生成windows的Expose事件）；也可以是完全异步的（例如通过键盘）；client被要求悉知事件，因为其他的应用也可以给你的程序发送事件，所以程序必须准备处理所有类型的事件；
 
-输入事件（例如：鼠标移动或者一个键被按下）从服务器异步到达，并在队列中等待，知道他们被显示的调用（例如XNextEvent()或者XWindowEvent()）；此外，一些库函数（例如XRaiseWindow()）生成Expose和ConfigureRequest事件，这些事件也会异步到达，但是client或许会希望 在调用一个 可以让服务器生成事件的函数之后 通过调用XSync() 显式的等待他们；
+输入事件（例如：鼠标移动或者一个键被按下）从服务器异步到达，并在队列中等待，直到他们被显式的调用（例如XNextEvent()或者XWindowEvent()）；此外，一些库函数（例如XRaiseWindow()）生成Expose和ConfigureRequest事件，这些事件也会异步到达，但是client或许会希望 在调用一个 可以让服务器生成事件的函数之后 通过调用XSync() 显式的等待他们；
 
 #### 1.2 Error
 
@@ -1474,7 +1474,7 @@ xlib提供了用于获取window tree，window的当前的信息，window当前�
 
 （lifugui的吐槽：说实话英语里的property和attribute这两个词，我都会翻译成属性，这两个词确实难以区分，甚至有些文档里也会混用这两个词，严格来说的话property更倾向于特有的属性，也就是特性，而attribute则倾向于普通的属性）
 
-属性（properties）是一些被命名的，被指定了类型的数据的集合；window system有一些预定义的属性（例如：window的名称，尺寸等等）；用户也可以随心所欲的定义其他的信息，并将之与windows捆绑在一起；每一个属性都有一个名称，这个名称是一个ISO Latin-1 字符串（也就是说，这个名称字符串编码是有规范的）；对于每一个被命名的属性，都有一个独特的标识（**atom**）和它关联在一起；一个属性也有一个类型，比如string或者int；这些类型同样也使用atom去表示，所以我们可以随意定义新的类型；只有一种类型的数据多半与一个属性名称相关联；client可以存储和查询取用与window相关联的属性；为了性能考量，我们应该使用atom而不是使用string；**[XInternAtom()](https://tronche.com/gui/x/xlib/window-information/XInternAtom.html)** 可以用来获取属性名称的atom 
+属性（properties）是一些被命名的，被指定了类型的数据的集合；window system有一些预定义的属性（例如：window的名称，尺寸等等）；用户也可以随心所欲的定义其他的信息，并将之与windows捆绑在一起；每一个属性都有一个名称，这个名称是一个ISO Latin-1 字符串（也就是说，这个名称字符串编码是有规范的）；对于每一个被命名的属性，都有一个独特的标识（**atom**）和它关联在一起；属性也有类型，比如string或者int；这些类型同样也使用atom去表示，所以我们可以随意定义新的类型；只有一种类型的数据多半与一个属性名称相关联；client可以存储和查询取用与window相关联的属性；为了性能考量，我们应该使用atom而不是使用string；**[XInternAtom()](https://tronche.com/gui/x/xlib/window-information/XInternAtom.html)** 可以用来获取属性名称的atom 
 
 属性也可能以几种可能的存储方式中的一个进行存储；Xserver可以使用8bit，16bit，32bit量去存储这些信息；这个机制让Xserver可以用client所期望的字节顺序去传递数据；
 
@@ -1590,7 +1590,7 @@ To delete a property on a given window, use **[XDeleteProperty()](https://tronch
 
 
 
-#### 4.5Selection
+#### 4.5 Selection
 
 selections是一种用于应用之间交换数据的方法；通过这种机制，应用可以交换任何类型的数据，可以商定数据的类型；selection可以被认为是一种动态类型的间接属性，比起将属性存在Xserver中，这种属性被存储在client中；selection是全局的（selection被认为是属于用户，但是由client保存的）而非特定window子层级的私有或者client的特定集合；
 
@@ -1608,11 +1608,184 @@ To request conversion of a selection, use **[XConvertSelection()](https://tronch
 
 
 
-### 暂时到此为止，我需要的内容应该已经翻译完成，接下来我要研究一下x协议到底是怎样的模型
+### 第十章： event
+
+client应用通过使用 **[XOpenDisplay()](https://tronche.com/gui/x/xlib/display/opening.html)** function和Xserver建立的链接通信；client应用通过这个链接向Xserver发送请求；这个请求是由client去调用Xlib函数发送的；许多xlib函数会造成Xsever产生event，同时，键盘和鼠标的移动也会产生异步事件；xserver会通过同样的链接将事件返回给client；本章主要讨论接下来的内容：
+
+- 
+
+- Event types
+
+  
+
+- Event structures
+
+  
+
+- Event mask
+
+  
+
+- [Event processing](https://tronche.com/gui/x/xlib/events/processing-overview.html)
+
+处理event的方法将在下个章节讨论；
+
+#### 10.1 事件类型
+
+事件是由一些驱动活动或者一些由xlib发送到的请求所引起的Xserver产生的非同步的数据；驱动相关的事件会从源window向祖先window传播，直到某个client应用指明选择该类型的事件，或者直到明确的放弃这个事件；Xserver通常只在client明确表示需要被通知这类型的事件的时候才会收到通知，这些设置通常通过设置window的 [event-mask](https://tronche.com/gui/x/xlib/window/attributes/event-and-do-not-propagate.html) 来设置；mask可以在创建window的设置，也可以通过设置 [event-mask](https://tronche.com/gui/x/xlib/window/attributes/event-and-do-not-propagate.html) 而改变；你也可以通过设置 [do-not-propagate](https://tronche.com/gui/x/xlib/window/attributes/event-and-do-not-propagate.html) mask 来遮罩事件类型；不过, **[MappingNotify](https://tronche.com/gui/x/xlib/events/window-state-change/mapping.html)** events 总会发送给全体client；
+
+事件类型 描述 Xserver生成的特定事件；对于每一种事件类型，都有一个对应的常量定义在X11/X.h中；下面的表中列出了事件分类和他们所关联的类型；关于事件的处理将会在"[Event Processing Overview](https://tronche.com/gui/x/xlib/events/processing-overview.html)"中被讨论
+
+|                                                              |                                                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Event Category**                                           | **Event Type**                                               |
+|                                                              |                                                              |
+| [Keyboard events](https://tronche.com/gui/x/xlib/events/keyboard-pointer/) | **[KeyPress](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)**, **[KeyRelease](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** |
+| [Pointer events](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html) | **[ButtonPress](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)**, **[ButtonRelease](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)**, **[MotionNotify](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** |
+| [Window crossing events](https://tronche.com/gui/x/xlib/events/window-entry-exit/) | **[EnterNotify](https://tronche.com/gui/x/xlib/events/window-entry-exit/)**, **[LeaveNotify](https://tronche.com/gui/x/xlib/events/window-entry-exit/)** |
+| [Input focus events](https://tronche.com/gui/x/xlib/events/input-focus/) | **[FocusIn](https://tronche.com/gui/x/xlib/events/input-focus/)**, **[FocusOut](https://tronche.com/gui/x/xlib/events/input-focus/)** |
+| [Keymap state notification event](https://tronche.com/gui/x/xlib/events/key-map.html) | **[KeymapNotify](https://tronche.com/gui/x/xlib/events/key-map.html)** |
+| [Exposure events](https://tronche.com/gui/x/xlib/events/exposure/) | **[Expose](https://tronche.com/gui/x/xlib/events/exposure/expose.html)**, **[GraphicsExpose](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html)**, **[NoExpose](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html)** |
+| [Structure control events](https://tronche.com/gui/x/xlib/events/structure-control/) | **[CirculateRequest](https://tronche.com/gui/x/xlib/events/structure-control/circulate.html)**, **[ConfigureRequest](https://tronche.com/gui/x/xlib/events/structure-control/configure.html)**, **[MapRequest](https://tronche.com/gui/x/xlib/events/structure-control/map.html)**, **[ResizeRequest](https://tronche.com/gui/x/xlib/events/structure-control/resize.html)** |
+| [Window state notification events](https://tronche.com/gui/x/xlib/events/window-state-change/) | **[CirculateNotify](https://tronche.com/gui/x/xlib/events/window-state-change/circulate.html)**, **[ConfigureNotify](https://tronche.com/gui/x/xlib/events/window-state-change/configure.html)**, **[CreateNotify](https://tronche.com/gui/x/xlib/events/window-state-change/create.html)**, **[DestroyNotify](https://tronche.com/gui/x/xlib/events/window-state-change/destroy.html)**, **[GravityNotify](https://tronche.com/gui/x/xlib/events/window-state-change/gravity.html)**, **[MapNotify](https://tronche.com/gui/x/xlib/events/window-state-change/map.html)**, **[MappingNotify](https://tronche.com/gui/x/xlib/events/window-state-change/mapping.html)**, **[ReparentNotify](https://tronche.com/gui/x/xlib/events/window-state-change/reparent.html)**, **[UnmapNotify](https://tronche.com/gui/x/xlib/events/window-state-change/unmap.html)**, **[VisibilityNotify](https://tronche.com/gui/x/xlib/events/window-state-change/visibility.html)** |
+| [Colormap state notification event](https://tronche.com/gui/x/xlib/events/colormap-state.html) | **[ColormapNotify](https://tronche.com/gui/x/xlib/events/colormap-state.html)** |
+| [Client communication events](https://tronche.com/gui/x/xlib/events/client-communication/) | **[ClientMessage](https://tronche.com/gui/x/xlib/events/client-communication/client-message.html)**, **[PropertyNotify](https://tronche.com/gui/x/xlib/events/client-communication/property.html)**, **[SelectionClear](https://tronche.com/gui/x/xlib/events/client-communication/selection-clear.html)**, **[SelectionNotify](https://tronche.com/gui/x/xlib/events/client-communication/selection.html)**, **[SelectionRequest](https://tronche.com/gui/x/xlib/events/client-communication/selection-request.html)** |
+
+#### 10.2 event 结构体
+
+每一种事件类型都在X11/Xlib.h中有对应的结构体；所有的事件结构体都有拥有下面这些成员；
+
+```c
+typedef struct {
+	int type;
+	unsigned long serial;	/* # of last request processed by server */
+	Bool send_event;	/* true if this came from a SendEvent request */
+	Display *display;	/* Display the event was read from */
+	Window window;
+} XAnyEvent;
+```
+
+结构体中的type这个成员是一个唯一的标识常量；例如当Xserver向client报告**[GraphicsExpose](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html)** 事件的时候，它会发送一个 [XGraphicsExposeEvent](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html#XGraphicsExposeEvent) 结构体，这个结构体中的type会被设置成**[GraphicsExpose](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html)** ；
+
+结构体中的display成员设置为指向读取事件的显示器的指针；
+
+如果这个事件来自于 **[SendEvent](https://tronche.com/gui/x/xlib/appendix/a.html#SendEvent)** 协议请求，send_event成员设置为Ture；
+
+serial成员是根据协议中报道的序列号设置的，但是会被从低16位扩展到32位的值；
+
+window成员被设置为最方便调度工具的window；
+
+Xserver可以再任何时候将事件发送到输入流中；当xlib等待回复的时候，Xlib会存储任何接收到的信息到事件队列中，以方便后续使用；Xlib也提供了让你检查这队列中的事件的方法； (see section "[Event Queue Management](https://tronche.com/gui/x/xlib/event-handling/event-queue-management.html)").
+
+除了为每个事件类型声明的单个结构体之外，XEvent结构是一个 每种事件的结构体的共用体（C语言中的union）；根据类型的不同，你应当使用XEvent来访问每个事件的成员；
+
+```c
+typedef union _XEvent {
+	int type;	/* must not be changed */
+	XAnyEvent xany;
+	XKeyEvent xkey;
+	XButtonEvent xbutton;
+	XMotionEvent xmotion;
+	XCrossingEvent xcrossing;
+	XFocusChangeEvent xfocus;
+	XExposeEvent xexpose;
+	XGraphicsExposeEvent xgraphicsexpose;
+	XNoExposeEvent xnoexpose;
+	XVisibilityEvent xvisibility;
+	XCreateWindowEvent xcreatewindow;
+	XDestroyWindowEvent xdestroywindow;
+	XUnmapEvent xunmap;
+	XMapEvent xmap;
+	XMapRequestEvent xmaprequest;
+	XReparentEvent xreparent;
+	XConfigureEvent xconfigure;
+	XGravityEvent xgravity;
+	XResizeRequestEvent xresizerequest;
+	XConfigureRequestEvent xconfigurerequest;
+	XCirculateEvent xcirculate;
+	XCirculateRequestEvent xcirculaterequest;
+	XPropertyEvent xproperty;
+	XSelectionClearEvent xselectionclear;
+	XSelectionRequestEvent xselectionrequest;
+	XSelectionEvent xselection;
+	XColormapEvent xcolormap;
+	XClientMessageEvent xclient;
+	XMappingEvent xmapping;
+	XErrorEvent xerror;
+	XKeymapEvent xkeymap;
+	long pad[24];
+} XEvent;
+```
+
+
+
+#### 10.3 Event Masks
+
+client得选择和window相关的大多数事件；为了达到这个目的需要将event mask传递给一个Xlib event-handling函数，这个函数要接受event-mask参数；event mask的bits被定义在X11/X.h中；event mask中的每个bit都对应着一个event name，这些event name就是你想要Xserver返回给你的client 的event或者events（复数..）
+
+除非client指明要求event，否则多数event并不会报道给client；
+
+除非client通过在[GC](https://tronche.com/gui/x/xlib/GC/manipulating.html)中设置 graphics-exposures 为**False** ,否则**[GraphicsExpose](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html)** 和 **[NoExpose](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html)** 会作为**[XCopyPlane()](https://tronche.com/gui/x/xlib/graphics/XCopyPlane.html)** 与 **[XCopyArea()](https://tronche.com/gui/x/xlib/graphics/XCopyArea.html)** 默认的回复； 
+
+**[SelectionClear](https://tronche.com/gui/x/xlib/events/client-communication/selection-clear.html)**, **[SelectionRequest](https://tronche.com/gui/x/xlib/events/client-communication/selection-request.html)**, **[SelectionNotify](https://tronche.com/gui/x/xlib/events/client-communication/selection.html)**, 或者 **[ClientMessage](https://tronche.com/gui/x/xlib/events/client-communication/client-message.html)** 则不能被屏蔽；
+
+selection相关的事件只会发送给与selection合作的client；
+
+当键盘或者鼠标的映射被改变的时候，, **[MappingNotify](https://tronche.com/gui/x/xlib/events/window-state-change/mapping.html)** 总会发送给全部的clients；
+
+下面的表格里是 你可以通过传递的event_mask参数 和 你希望指定的event mask 的环境：
+
+|                                                              |                                                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Event Mask**                                               | **Circumstances**                                            |
+|                                                              |                                                              |
+| **NoEventMask**                                              | No events wanted                                             |
+| **[KeyPressMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#KeyPressMask)** | Keyboard down events wanted                                  |
+| **[KeyReleaseMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#KeyReleaseMask)** | Keyboard up events wanted                                    |
+| **[ButtonPressMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ButtonPressMask)** | Pointer button down events wanted                            |
+| **[ButtonReleaseMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ButtonReleaseMask)** | Pointer button up events wanted                              |
+| **[EnterWindowMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#EnterWindowMask)** | Pointer window entry events wanted                           |
+| **[LeaveWindowMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#LeaveWindowMask)** | Pointer window leave events wanted                           |
+| **[PointerMotionMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#PointerMotionMask)** | Pointer motion events wanted                                 |
+| **[PointerMotionHintMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#PointerMotionHintMask)** | Pointer motion hints wanted                                  |
+| **[Button1MotionMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#Button1MotionMask)** | Pointer motion while button 1 down                           |
+| **[Button2MotionMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#Button2MotionMask)** | Pointer motion while button 2 down                           |
+| **[Button3MotionMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#Button3MotionMask)** | Pointer motion while button 3 down                           |
+| **[Button4MotionMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#Button4MotionMask)** | Pointer motion while button 4 down                           |
+| **[Button5MotionMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#Button5MotionMask)** | Pointer motion while button 5 down                           |
+| **[ButtonMotionMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ButtonMotionMask)** | Pointer motion while any button down                         |
+| **[KeymapStateMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#KeymapStateMask)** | Keyboard state wanted at window entry and focus in           |
+| **[ExposureMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ExposureMask)** | Any exposure wanted                                          |
+| **[VisibilityChangeMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#VisibilityChangeMask)** | Any change in visibility wanted                              |
+| **[StructureNotifyMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#StructureNotifyMask)** | Any change in window structure wanted                        |
+| **[ResizeRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ResizeRedirectMask)** | Redirect resize of this window                               |
+| **[SubstructureNotifyMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#SubstructureNotifyMask)** | Substructure notification wanted                             |
+| **[SubstructureRedirectMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#SubstructureRedirectMask)** | Redirect structure requests on children                      |
+| **[FocusChangeMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#FocusChangeMask)** | Any change in input focus wanted                             |
+| **[PropertyChangeMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#PropertyChangeMask)** | Any change in property wanted                                |
+| **[ColormapChangeMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#ColormapChangeMask)** | Any change in colormap wanted                                |
+| **[OwnerGrabButtonMask](https://tronche.com/gui/x/xlib/events/processing-overview.html#OwnerGrabButtonMask)** | Automatic grabs should activate with owner_events set to **True** |
+|                                                              |                                                              |
+
+#### 10.4 Event processing overview
+
+
+
+
+
+
+
+
+
+## 实际使用的时候遇到的问题
+
+
+
+### 信息流如何在X模型下传递？
 
 ![image](./figures/2-1.png)
 
-首先要清楚X11真的是一个很古老的协议了；第11个版本的核心理念是提供机制，而非策略；在这个理念的指导下，40年间X协议通过各种扩展仍旧活跃在业界；
+首先要清楚X11真的是一个很古老的协议了；第11个版本的核心理念是 "提供机制，而非策略"；在这个理念的指导下，40年间X协议通过各种扩展仍旧存活在业界；
 
 让我们来模拟一个场景：你点了一下chrome浏览器的刷新按钮，这个过程在X的视角上是怎样发生的？
 
@@ -1624,21 +1797,61 @@ To request conversion of a selection, use **[XConvertSelection()](https://tronch
 
 *解释：上面的流程中有两个东西需要解释一下：*
 
-*首先是合成桌面环境，这个东西相当于一个窗口管理器，他会掌管所有的窗口的输出效果，正因为有这个东西，现在linux的桌面环境才能看起来风格一致，动画效果美观；*
+*首先是合成桌面环境，这个东西相当于一个窗口管理器，他会掌管所有的窗口的输出效果，正因为有这个东西，现在linux的桌面环境才能看起来风格一致，动画效果美观；但是在X window system下，合成器本身也是一个client*
 
 *第二个要解释的模式设置 KMS，linux本身是没有图形界面的，linux默认的界面是是一个80X24的字符输出界面，因此，在很久以前我们想要在linux下进入1024X768或更高分辨率的图形模式时，就需要X进行一次模式设置(实际上就是设置了一下分辨率)，如果你使用过比较早版本的linux图形界面，就会发现在linux启动并且进入图形界面的过程中，屏幕会闪一下，这个闪一下就是模式设置的副作用；后来linux引入和KMS-内核模式设置，这样在linux在显示驱动init完成之后很快就会设置好分辨率和色彩空间，这样就不会那个闪一下了；*
 
-这里要引入一个事实：我们在这篇文章的前面一直在强调X window sys有多么强大，多么厉害，历经多年仍旧在工作；但是事实真的是这样吗？实际上现在X所辐射到的范围正在变小，在X window诞生的时候，它采用的是文字+图形的绘制方案，彼时的图形系统是依靠文字+图形堆砌起来的；现在我们用的不是GTK+就是Qt了，作为跨平台的工具，GTK和Qt没了X真的活不了吗？如果你深入了解当前的开发环境，就会发现人们会使用Cairo图形库和Pango文字库这样的工具，他们支持各种backend，能在X window下工作，也能在MacOS的Quartz下工作，也能在微软的GDI下工作；尽管在linux下他们仍旧是基于X发布的，但是对于他们而言X真的是不可替代的吗？实际上现在X已经从什么都，变得越来越清闲，尽管由于X已经在某种程度上对unix系产生了巨大的影响，但是它或许也不是不可被替代的；
+这里要说一个事实：我们在这篇文章的前面一直在强调X window sys有多么强大，多么厉害，历经多年仍旧在工作；但是事实真的是这样吗？实际上现在X所辐射到的范围正在变小，在X window诞生的时候，它采用的是文字+图形的绘制方案，彼时的图形系统是依靠文字+图形堆砌起来的，在那个时候你可以认为整个桌面环境都是X做出来的；但是现在我们用的不是GTK+就是Qt了，作为跨平台的工具，GTK和Qt没了X真的活不了吗？如果你深入了解当前的开发环境，就会发现人们会使用Cairo图形库和Pango文字库这样的工具，他们支持各种backend，能在X window下工作，也能在MacOS的Quartz下工作，也能在微软的GDI下工作；尽管在linux下他们仍旧是基于X发布的，但是对于他们而言X真的是不可替代的吗？实际上现在X已经从什么都，变得越来越清闲，尽管由于X已经在某种程度上对unix系产生了巨大的影响，但是它或许也不是不可被替代的；
+
+
+
+### 关于request和event
+
+实际上request和event是有区别的，client向server发送的叫做request；server向client发送的叫event；
 
 
 
 
 
+### 关于selection
+
+虽然上面的编程手册中有一节单独说了selection，但是我感觉我的翻译很有问题...我自己也看不懂译文；这里再结合其他的资料学习一下selection；
+
+selection是一种用于client之间交换数据的机制；每个selection都由一个Atom命名；可以存在很多个selection，并且Xserver都可以访问这些selection，但是每个selection都属于一个Xclient，并且被附在一个window上；（我的理解是：selection像一个运输船）
+
+selection在它的所有者以及请求者之间进行通信，所有者拥有selection中存储的数据，请求者想要得到这些数据；
+
+请求者为了获取数据，要提供以下信息：
+
+1. selection 的名称
+2. 需要请求的属性的名称
+3. selection所附加到的window
+4. 所需数据类型的Atom值
+5. 其他一些可选的请求参数
+
+如果请求者获得了selection，那么selection的所有者会接受到一个事件，然后会执行下面的操作：
+
+1. 将selection中的内容转化成请求所要求的数据类型（关于这点在手册上也说明了，selection的内容是动态的，可能会根据请求的目标类型改变格式）
+2. 将数据放在window属性上
+3. 向请求者发送一个事件，告知属性是可用的
 
 
 
+### 关于同步/异步
+
+之前总提到的事件是异步的，这个异步到底是什么？异步就是：我发送了请求或者事件，然后我继续忙我的，如果你那边处理完了，给我通知，我再回过头处理你给我的回馈；同步就是发给你请求，我就卡死在这里，一直等你给我回馈；
+
+对于大多数cs架构的软件来说，异步是基本的设计原则，原因不必多言；
+
+当然为了debug，Xlib也提供了方法让我们能开启同步模式；
 
 
+
+### 关于Atom
+
+atom的存在是为了减轻CS架构下，数据传输的带宽压力；如果每次请求数据都要发一个字符串以告知想要的数据的名称，带宽压力就会变大，毕竟字符串或许会很长；
+
+因此X11选择将数据类型定义为一个更加简洁的东西，方便数据的传递；这个东西就是atom；
 
 
 
