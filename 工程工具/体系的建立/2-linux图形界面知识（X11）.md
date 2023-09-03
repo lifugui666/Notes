@@ -1610,9 +1610,7 @@ To request conversion of a selection, use **[XConvertSelection()](https://tronch
 
 ### 第十章： event
 
-client应用通过使用 **[XOpenDisplay()](https://tronche.com/gui/x/xlib/display/opening.html)** function和Xserver建立的链接通信；client应用通过这个链接向Xserver发送请求；这个请求是由client去调用Xlib函数发送的；许多xlib函数会造成Xsever产生event，同时，键盘和鼠标的移动也会产生异步事件；xserver会通过同样的链接将事件返回给client；本章主要讨论接下来的内容：
-
-- 
+client应用通过使用 **[XOpenDisplay()](https://tronche.com/gui/x/xlib/display/opening.html)** function和Xserver建立的链接通信；client应用通过这个链接向Xserver发送请求；这个请求是由client去调用Xlib函数发送的；许多xlib函数会造成Xsever产生event，同时，键盘和鼠标的移动也会产生异步事件；xserver会通过链接将事件返回给client；本章主要讨论接下来的内容：
 
 - Event types
 
@@ -1769,6 +1767,250 @@ selection相关的事件只会发送给与selection合作的client；
 
 #### 10.4 Event processing overview
 
+在event处理期间，报告给client应用的event却决于你为window提供的event mask属性；对于某些event mask来说，在event mask常量和event type之间是一一对应的关系；例如，如果你想要传入event mask **ButtonPressMask** Xserver只会返回**[ButtonPress](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** events；多数event会包含一个time成员，这个time是event发生的时候的time；
+
+在另一些情况下，一个event mask常数可能对应好几个event type常数；例如，如果你想要传递event mask **SubstructureNotifyMask** 那么Xserver可能发送**[CirculateNotify](https://tronche.com/gui/x/xlib/events/window-state-change/circulate.html)**, **[ConfigureNotify](https://tronche.com/gui/x/xlib/events/window-state-change/configure.html)**, **[CreateNotify](https://tronche.com/gui/x/xlib/events/window-state-change/create.html)**, **[DestroyNotify](https://tronche.com/gui/x/xlib/events/window-state-change/destroy.html)**, **[GravityNotify](https://tronche.com/gui/x/xlib/events/window-state-change/gravity.html)**, **[MapNotify](https://tronche.com/gui/x/xlib/events/window-state-change/map.html)**, **[ReparentNotify](https://tronche.com/gui/x/xlib/events/window-state-change/reparent.html)**,  **[UnmapNotify](https://tronche.com/gui/x/xlib/events/window-state-change/unmap.html)** events.
+
+还有一些情况，两个event mask或许会对应一个event type；例如，如果你想传递**PointerMotionMask** or **ButtonMotionMask** Xserver将会返回**[MotionNotify](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** event.
+
+接下来的这个表中列出了event mask和他们所关联的event type 以及 event type所关联的结构体名称；其中有一些是在两个event type之间共享的泛用型结构体；请注意NA出现在那些不适合使用information的条例中；
+
+| **Event Mask**                                               | **Event Type**                                               | **Structure**                                                | **Generic Structure**                                        |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+|                                                              |                                                              |                                                              |                                                              |
+| ButtonMotionMask                                             | **[MotionNotify](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** | XPointerMovedEvent                                           | [XMotionEvent](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html#XMotionEvent) |
+| Button1MotionMask                                            |                                                              |                                                              |                                                              |
+| Button2MotionMask                                            |                                                              |                                                              |                                                              |
+| Button3MotionMask                                            |                                                              |                                                              |                                                              |
+| Button4MotionMask                                            |                                                              |                                                              |                                                              |
+| Button5MotionMask                                            |                                                              |                                                              |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| ButtonPressMask                                              | **[ButtonPress](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** | XButtonPressedEvent                                          | [XButtonEvent](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html#XButtonEvent) |
+|                                                              |                                                              |                                                              |                                                              |
+| ButtonReleaseMask                                            | **[ButtonRelease](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** | XButtonReleasedEvent                                         | [XButtonEvent](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html#XButtonEvent) |
+|                                                              |                                                              |                                                              |                                                              |
+| ColormapChangeMask                                           | **[ColormapNotify](https://tronche.com/gui/x/xlib/events/colormap-state.html)** | [XColormapEvent](https://tronche.com/gui/x/xlib/events/colormap-state.html#XColormapEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| EnterWindowMask                                              | **[EnterNotify](https://tronche.com/gui/x/xlib/events/window-entry-exit/)** | XEnterWindowEvent                                            | [XCrossingEvent](https://tronche.com/gui/x/xlib/events/window-entry-exit/#XCrossingEvent) |
+|                                                              |                                                              |                                                              |                                                              |
+| LeaveWindowMask                                              | **[LeaveNotify](https://tronche.com/gui/x/xlib/events/window-entry-exit/)** | XLeaveWindowEvent                                            | [XCrossingEvent](https://tronche.com/gui/x/xlib/events/window-entry-exit/#XCrossingEvent) |
+|                                                              |                                                              |                                                              |                                                              |
+| ExposureMask                                                 | **[Expose](https://tronche.com/gui/x/xlib/events/exposure/expose.html)** | [XExposeEvent](https://tronche.com/gui/x/xlib/events/exposure/expose.html#XExposeEvent) |                                                              |
+| [GCGraphicsExposures](https://tronche.com/gui/x/xlib/GC/manipulating.html#graphics-exposure) in GC | **[GraphicsExpose](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html)** | [XGraphicsExposeEvent](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html#XGraphicsExposeEvent) |                                                              |
+|                                                              | **[NoExpose](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html)** | [XNoExposeEvent](https://tronche.com/gui/x/xlib/events/exposure/graphics-expose-and-no-expose.html#XNoExposeEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| FocusChangeMask                                              | **[FocusIn](https://tronche.com/gui/x/xlib/events/input-focus/)** | XFocusInEvent                                                | [XFocusChangeEvent](https://tronche.com/gui/x/xlib/events/input-focus/#XFocusChangeEvent) |
+|                                                              | **[FocusOut](https://tronche.com/gui/x/xlib/events/input-focus/)** | XFocusOutEvent                                               | [XFocusChangeEvent](https://tronche.com/gui/x/xlib/events/input-focus/#XFocusChangeEvent) |
+|                                                              |                                                              |                                                              |                                                              |
+| KeymapStateMask                                              | **[KeymapNotify](https://tronche.com/gui/x/xlib/events/key-map.html)** | [XKeymapEvent](https://tronche.com/gui/x/xlib/events/key-map.html#XKeymapEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| KeyPressMask                                                 | **[KeyPress](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** | XKeyPressedEvent                                             | [XKeyEvent](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html#XKeyEvent) |
+| KeyReleaseMask                                               | **[KeyRelease](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** | XKeyReleasedEvent                                            | [XKeyEvent](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html#XKeyEvent) |
+|                                                              |                                                              |                                                              |                                                              |
+| OwnerGrabButtonMask                                          | N.A.                                                         | N.A.                                                         |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| PointerMotionMask                                            | **[MotionNotify](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html)** | XPointerMovedEvent                                           | [XMotionEvent](https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html#XMotionEvent) |
+| PointerMotionHintMask                                        | N.A.                                                         | N.A.                                                         |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| PropertyChangeMask                                           | **[PropertyNotify](https://tronche.com/gui/x/xlib/events/client-communication/property.html)** | [XPropertyEvent](https://tronche.com/gui/x/xlib/events/client-communication/property.html#XPropertyEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| ResizeRedirectMask                                           | **[ResizeRequest](https://tronche.com/gui/x/xlib/events/structure-control/resize.html)** | [XResizeRequestEvent](https://tronche.com/gui/x/xlib/events/structure-control/resize.html#XResizeRequestEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| StructureNotifyMask                                          | **[CirculateNotify](https://tronche.com/gui/x/xlib/events/window-state-change/circulate.html)** | [XCirculateEvent](https://tronche.com/gui/x/xlib/events/window-state-change/circulate.html#XCirculateEvent) |                                                              |
+|                                                              | **[ConfigureNotify](https://tronche.com/gui/x/xlib/events/window-state-change/configure.html)** | [XConfigureEvent](https://tronche.com/gui/x/xlib/events/window-state-change/configure.html#XConfigureEvent) |                                                              |
+|                                                              | **[DestroyNotify](https://tronche.com/gui/x/xlib/events/window-state-change/destroy.html)** | [XDestroyWindowEvent](https://tronche.com/gui/x/xlib/events/window-state-change/destroy.html#XDestroyWindowEvent) |                                                              |
+|                                                              | **[GravityNotify](https://tronche.com/gui/x/xlib/events/window-state-change/gravity.html)** | [XGravityEvent](https://tronche.com/gui/x/xlib/events/window-state-change/gravity.html#XGravityEvent) |                                                              |
+|                                                              | **[MapNotify](https://tronche.com/gui/x/xlib/events/window-state-change/map.html)** | [XMapEvent](https://tronche.com/gui/x/xlib/events/window-state-change/map.html#XMapEvent) |                                                              |
+|                                                              | **[ReparentNotify](https://tronche.com/gui/x/xlib/events/window-state-change/reparent.html)** | [XReparentEvent](https://tronche.com/gui/x/xlib/events/window-state-change/reparent.html#XReparentEvent) |                                                              |
+|                                                              | **[UnmapNotify](https://tronche.com/gui/x/xlib/events/window-state-change/unmap.html)** | [XUnmapEvent](https://tronche.com/gui/x/xlib/events/window-state-change/unmap.html#XUnmapEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| SubstructureNotifyMask                                       | **[CirculateNotify](https://tronche.com/gui/x/xlib/events/window-state-change/circulate.html)** | [XCirculateEvent](https://tronche.com/gui/x/xlib/events/window-state-change/circulate.html#XCirculateEvent) |                                                              |
+|                                                              | **[ConfigureNotify](https://tronche.com/gui/x/xlib/events/window-state-change/configure.html)** | [XConfigureEvent](https://tronche.com/gui/x/xlib/events/window-state-change/configure.html#XConfigureEvent) |                                                              |
+|                                                              | **[CreateNotify](https://tronche.com/gui/x/xlib/events/window-state-change/create.html)** | [XCreateWindowEvent](https://tronche.com/gui/x/xlib/events/window-state-change/create.html#XCreateWindowEvent) |                                                              |
+|                                                              | **[DestroyNotify](https://tronche.com/gui/x/xlib/events/window-state-change/destroy.html)** | [XDestroyWindowEvent](https://tronche.com/gui/x/xlib/events/window-state-change/destroy.html#XDestroyWindowEvent) |                                                              |
+|                                                              | **[GravityNotify](https://tronche.com/gui/x/xlib/events/window-state-change/gravity.html)** | [XGravityEvent](https://tronche.com/gui/x/xlib/events/window-state-change/gravity.html#XGravityEvent) |                                                              |
+|                                                              | **[MapNotify](https://tronche.com/gui/x/xlib/events/window-state-change/map.html)** | [XMapEvent](https://tronche.com/gui/x/xlib/events/window-state-change/map.html#XMapEvent) |                                                              |
+|                                                              | **[ReparentNotify](https://tronche.com/gui/x/xlib/events/window-state-change/reparent.html)** | [XReparentEvent](https://tronche.com/gui/x/xlib/events/window-state-change/reparent.html#XReparentEvent) |                                                              |
+|                                                              | **[UnmapNotify](https://tronche.com/gui/x/xlib/events/window-state-change/unmap.html)** | [XUnmapEvent](https://tronche.com/gui/x/xlib/events/window-state-change/unmap.html#XUnmapEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| SubstructureRedirectMask                                     | **[CirculateRequest](https://tronche.com/gui/x/xlib/events/structure-control/circulate.html)** | [XCirculateRequestEvent](https://tronche.com/gui/x/xlib/events/structure-control/circulate.html#XCirculateRequestEvent) |                                                              |
+|                                                              | **[ConfigureRequest](https://tronche.com/gui/x/xlib/events/structure-control/configure.html)** | [XConfigureRequestEvent](https://tronche.com/gui/x/xlib/events/structure-control/configure.html#XConfigureRequestEvent) |                                                              |
+|                                                              | **[MapRequest](https://tronche.com/gui/x/xlib/events/structure-control/map.html)** | [XMapRequestEvent](https://tronche.com/gui/x/xlib/events/structure-control/map.html#XMapRequestEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| N.A.                                                         | **[ClientMessage](https://tronche.com/gui/x/xlib/events/client-communication/client-message.html)** | [XClientMessageEvent](https://tronche.com/gui/x/xlib/events/client-communication/client-message.html#XClientMessageEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| N.A.                                                         | **[MappingNotify](https://tronche.com/gui/x/xlib/events/window-state-change/mapping.html)** | [XMappingEvent](https://tronche.com/gui/x/xlib/events/window-state-change/mapping.html#XMappingEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| N.A.                                                         | **[SelectionClear](https://tronche.com/gui/x/xlib/events/client-communication/selection-clear.html)** | [XSelectionClearEvent](https://tronche.com/gui/x/xlib/events/client-communication/selection-clear.html#XSelectionClearEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| N.A.                                                         | **[SelectionNotify](https://tronche.com/gui/x/xlib/events/client-communication/selection.html)** | [XSelectionEvent](https://tronche.com/gui/x/xlib/events/client-communication/selection.html#XSelectionEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| N.A.                                                         | **[SelectionRequest](https://tronche.com/gui/x/xlib/events/client-communication/selection-request.html)** | [XSelectionRequestEvent](https://tronche.com/gui/x/xlib/events/client-communication/selection-request.html#XSelectionRequestEvent) |                                                              |
+|                                                              |                                                              |                                                              |                                                              |
+| VisibilityChangeMask                                         | **[VisibilityNotify](https://tronche.com/gui/x/xlib/events/window-state-change/visibility.html)** | [XVisibilityEvent](https://tronche.com/gui/x/xlib/events/window-state-change/visibility.html#XVisibilityEvent) |                                                              |
+
+接下来的章节描述了当你选择不同的mask时的处理过程；这些章节被按照以下类别进行组织：
+
+[Keyboard and pointer events](https://tronche.com/gui/x/xlib/events/keyboard-pointer/)
+
+[Window crossing events](https://tronche.com/gui/x/xlib/events/window-entry-exit/)
+
+[Input focus events](https://tronche.com/gui/x/xlib/events/input-focus/)
+
+[Keymap state notification events](https://tronche.com/gui/x/xlib/events/key-map.html)
+
+[Exposure events](https://tronche.com/gui/x/xlib/events/exposure/)
+
+[Window state notification events](https://tronche.com/gui/x/xlib/events/window-state-change/)
+
+[Structure control events](https://tronche.com/gui/x/xlib/events/structure-control/)
+
+[Colormap state notification events](https://tronche.com/gui/x/xlib/events/colormap-state.html)
+
+[Client communication events](https://tronche.com/gui/x/xlib/events/client-communication/)
+
+（实际上第十章接下来的章节是按照这些标题进行的，不过目前我只对client communication event感兴趣）
+
+#### 10.5[Keyboard and pointer events](https://tronche.com/gui/x/xlib/events/keyboard-pointer/)
+
+#### 10.6 [Window crossing events](https://tronche.com/gui/x/xlib/events/window-entry-exit/)
+
+#### 10.7 [Input focus events](https://tronche.com/gui/x/xlib/events/input-focus/)
+
+#### 10.8 [Keymap state notification events](https://tronche.com/gui/x/xlib/events/key-map.html)
+
+#### 10.9  [Exposure events](https://tronche.com/gui/x/xlib/events/exposure/)
+
+#### 10.10 [Window state notification events](https://tronche.com/gui/x/xlib/events/window-state-change/)
+
+#### 10.11 [Structure control events](https://tronche.com/gui/x/xlib/events/structure-control/)
+
+#### 10.12 [Colormap state notification events](https://tronche.com/gui/x/xlib/events/colormap-state.html)
+
+#### 10.13 [Client communication events](https://tronche.com/gui/x/xlib/events/client-communication/)
+
+##### 10.13.1 ClientMessage Events
+
+Xserver只会在client调用了 **[XSendEvent()](https://tronche.com/gui/x/xlib/event-handling/XSendEvent.html)** 的时候产生**ClientMessage**事件；
+
+该类型的事件结构体包含：
+
+```c
+typedef struct {
+	int type;			/* ClientMessage */
+	unsigned long serial;		/* # of last request processed by server */
+	Bool send_event;		/* true if this came from a SendEvent request */
+	Display *display;		/* Display the event was read from */
+	Window window;
+	Atom message_type;
+	int format;
+	union {
+		char b[20];
+		short s[10];
+		long l[5];
+	        } data;
+} XClientMessageEvent;
+```
+
+其中的message_type成员会被设置为一个atom，这个atom会表明接收这个event的client应当如何去解释数据；
+
+format可以被设置为8，16，32；以表示数据是否应该被是为byte，short或者被视为long；
+
+data这个联合体包含成员：b,s,l三个成员，这三个成员分别代表20个8bit的数据，10个16bit的数据，5个32bit的数据（这就是说clientMessage event能够传递的数据是有长度限制的）；Xserver不对window，message_type或者data成员做解释；
+
+
+
+#####  PropertyNotify Events
+
+Xserver可以向 需要 特定的窗口property变化信息的 client 报道**PropertyNotify**事件；
+
+要接收到这个**PropertyNotify**事件，需要设置window的event-mask属性；
+
+这个event type结构体包含：
+
+```c
+typedef struct {
+	int type;		/* PropertyNotify */
+	unsigned long serial;	/* # of last request processed by server */
+	Bool send_event;	/* true if this came from a SendEvent request */
+	Display *display;	/* Display the event was read from */
+	Window window;
+	Atom atom;
+	Time time;
+	int state;		/* PropertyNewValue or PropertyDelete */
+} XPropertyEvent;
+```
+
+其中window成员指定 发生改变的property所关联的 window；
+
+atom成员被设置为property的atom以表示哪个property是我们所关注的；
+
+time成员记录这个property被改变的时间；
+
+state成员用来记录这个property是值发生了变化还是被删除了，state的值可能是**PropertyNewValue** or **PropertyDelete**；在property的被**[XChangeProperty()](https://tronche.com/gui/x/xlib/window-information/XChangeProperty.html)** or **[XRotateWindowProperties()](https://tronche.com/gui/x/xlib/window-information/XRotateWindowProperties.html)**改变的时候，state就是PropertyNewValue；如果被**[XDeleteProperty()](https://tronche.com/gui/x/xlib/window-information/XDeleteProperty.html)**或者使用**[XGetWindowProperty()](https://tronche.com/gui/x/xlib/window-information/XGetWindowProperty.html)**获得到的delete参数是Ture，那么state就是PropertyDelete；
+
+##### 10.13.3 SelectionClear Events
+
+Xserver会向失去selection所有权的client发送**SelectionClear**事件；当其他的client调用**[XSetSelectionOwner()](https://tronche.com/gui/x/xlib/window-information/XSetSelectionOwner.html)**以宣称对selection的所有权时，Xserver就会产生这个事件；
+
+```c
+typedef struct {
+	int type;		/* SelectionClear */
+	unsigned long serial;	/* # of last request processed by server */
+	Bool send_event;	/* true if this came from a SendEvent request */
+	Display *display;	/* Display the event was read from */
+	Window window;
+	Atom selection;
+	Time time;
+} XSelectionClearEvent;
+```
+
+其中selection成员被设置为selection atom；
+
+time成员被设置为这个selection被记录到的最后一次变动的时间；
+
+window成员记录的是失去selection所有权的哪个window
+
+##### 10.13.5 SelectionNotify Events
+
+当selection没有所有者时，Xserver回应**[ConvertSelection](https://tronche.com/gui/x/xlib/appendix/a.html#ConvertSelection)** protocol request的时候产生这个事件；当selection有所有者的时候这个事件会由selection的所有者调用**[XSendEvent()](https://tronche.com/gui/x/xlib/event-handling/XSendEvent.html)**产生；当selection被转换或者当selection转换无法被执行的时候，selection的所有者应该将这个事件发送给请求者；
+
+如果在**[ConvertSelection](https://tronche.com/gui/x/xlib/appendix/a.html#ConvertSelection)** protocol request中将None指定为property，所有者应该选择一个property name，将请求的结果作为property存储在请求者的window上，然后发送一个**SelectionNotify** 给出该属性的实际名称；
+
+```c
+typedef struct {
+	int type;		/* SelectionNotify */
+	unsigned long serial;	/* # of last request processed by server */
+	Bool send_event;	/* true if this came from a SendEvent request */
+	Display *display;	/* Display the event was read from */
+	Window requestor;
+	Atom selection;
+	Atom target;
+	Atom property;		/* atom or None */
+	Time time;
+} XSelectionEvent;
+```
+
+其中requestor成员被设置为selection的请求者所关联的window；
+
+selection成员被指定为一个atom，这个atom指明了selection；例如PRIMARY就被用于primary selection
+
+target成员也是一个atom，用于表明被转换的类型；
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1808,6 +2050,8 @@ selection相关的事件只会发送给与selection合作的client；
 ### 关于request和event
 
 实际上request和event是有区别的，client向server发送的叫做request；server向client发送的叫event；
+
+按照event章节的相关描述，由键盘和鼠标驱动产生的event会通知窗口以及窗口的父辈；MappingNotify会通知给全部client；而大多数事件则会根据window设置的mask去判断是否要通知该window；
 
 
 
