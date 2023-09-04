@@ -1476,7 +1476,7 @@ xlib提供了用于获取window tree，window的当前的信息，window当前�
 
 属性（properties）是一些被命名的，被指定了类型的数据的集合；window system有一些预定义的属性（例如：window的名称，尺寸等等）；用户也可以随心所欲的定义其他的信息，并将之与windows捆绑在一起；每一个属性都有一个名称，这个名称是一个ISO Latin-1 字符串（也就是说，这个名称字符串编码是有规范的）；对于每一个被命名的属性，都有一个独特的标识（**atom**）和它关联在一起；属性也有类型，比如string或者int；这些类型同样也使用atom去表示，所以我们可以随意定义新的类型；只有一种类型的数据多半与一个属性名称相关联；client可以存储和查询取用与window相关联的属性；为了性能考量，我们应该使用atom而不是使用string；**[XInternAtom()](https://tronche.com/gui/x/xlib/window-information/XInternAtom.html)** 可以用来获取属性名称的atom 
 
-属性也可能以几种可能的存储方式中的一个进行存储；Xserver可以使用8bit，16bit，32bit量去存储这些信息；这个机制让Xserver可以用client所期望的字节顺序去传递数据；
+属性也可能以几种可能的存储方式中的一个进行存储；Xserver可以使用8bit，16bit，32bit量去存储这些信息；这个机制让Xserver可以用client所期望的字节序去传递数据；
 
 注意：如果你定义了复杂的类型的属性，你必须自己完成编码和解码；若这个函数要跨平台，那么就要特别小心的编写；至于如何编写扩展库，请参照"[Extensions](https://tronche.com/gui/x/xlib/appendix/c/)".
 
@@ -1971,6 +1971,49 @@ time成员被设置为这个selection被记录到的最后一次变动的时间�
 
 window成员记录的是失去selection所有权的哪个window
 
+
+
+#####  10.13.4 SelectionRequest Events
+
+Xserver会将SelectionRequest事件返回给selection的拥有者；每当cleitn通过 **[XConvertSelection()](https://tronche.com/gui/x/xlib/window-information/XConvertSelection.html)** 向selection的拥有者请求进行selection转换的时候，Xserver就会产生这个事件
+
+```c
+typedef struct {
+	int type;		/* SelectionRequest */
+	unsigned long serial;	/* # of last request processed by server */
+	Bool send_event;	/* true if this came from a SendEvent request */
+	Display *display;	/* Display the event was read from */
+	Window owner;
+	Window requestor;
+	Atom selection;
+	Atom target;
+	Atom property;
+	Time time;
+} XSelectionRequestEvent;
+```
+
+owner成员是一个window，是当前selection 的拥有者；
+
+requestor成员是发起请求的window；
+
+selection是一个atom，是被转换的selection 的名字；
+
+target也是一个atom，表明被转换的目标；
+
+property可以是一个property的名称，也可以是None
+
+time就是时间戳；也可以是**ConvertSelection**请求中的**CurrentTime**值
+
+所有者应当基于target type将selection转换为指定类型，并且要发送一个 **[SelectionNotify](https://tronche.com/gui/x/xlib/events/client-communication/selection.html)** 事件反馈给请求者； [*Inter-Client Communication Conventions Manual*](https://tronche.com/gui/x/icccm/).中有完整的使用说明
+
+
+
+
+
+
+
+
+
 ##### 10.13.5 SelectionNotify Events
 
 当selection没有所有者时，Xserver回应**[ConvertSelection](https://tronche.com/gui/x/xlib/appendix/a.html#ConvertSelection)** protocol request的时候产生这个事件；当selection有所有者的时候这个事件会由selection的所有者调用**[XSendEvent()](https://tronche.com/gui/x/xlib/event-handling/XSendEvent.html)**产生；当selection被转换或者当selection转换无法被执行的时候，selection的所有者应该将这个事件发送给请求者；
@@ -1995,31 +2038,23 @@ typedef struct {
 
 selection成员被指定为一个atom，这个atom指明了selection；例如PRIMARY就被用于primary selection
 
-target成员也是一个atom，用于表明被转换的类型；
+target成员也是一个atom，用于表明被转换的类型；例如对pixmap就要使用PIXMAP；
+
+property成员也是一个atom，用于表示结果存储在哪个property中；如果转换失败了那么这个成员就会被设置为None；
+
+time成员是转换发生的时间，这个成员的值可以是时间戳，也可以是CurrentTime
+
+
+
+# Inter-Client Communication Conventions Manual
+
+​	
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## 实际使用的时候遇到的问题
+# 实际使用的时候遇到的问题
 
 
 
@@ -2055,13 +2090,53 @@ target成员也是一个atom，用于表明被转换的类型；
 
 
 
+### 关于同步/异步
 
+之前总提到的事件是异步的，这个异步到底是什么？异步就是：我发送了请求或者事件，然后我继续忙我的，如果你那边处理完了，给我通知，我再回过头处理你给我的回馈；同步就是发给你请求，我就卡死在这里，一直等你给我回馈；
+
+对于大多数cs架构的软件来说，异步是基本的设计原则，原因不必多言；
+
+当然为了debug，Xlib也提供了方法让我们能开启同步模式；
+
+
+
+### 关于Atom
+
+atom和property密切相关，atom的存在是为了解决property在client/server之间传递的一些问题的；
+
+atom存在的目的有三个：
+
+1. 减轻CS架构下，数据传输的带宽压力；如果每次请求数据都要发一个字符串以告知想要的property的名称，带宽压力就会变大，毕竟字符串或许会很长；
+2. 使用字符串还涉及到编码的问题，如果Client用utf8，server用ascii，那么就彻底无法通信了...
+3. 如果使用字符串形式表示property名称，长度就无法被固定；X协议的设计者认为固定长度是很重要的；
+
+基于这些理由，X协议的设计者设计了atom这个东西，并且提供了一个协议请求（InternAtom）来将一些byte序列在server中注册为atom，也提供了反映射的方法GetAtomName（知道atom，获取byte序列）
+
+x提供了6个不同的命名空间，任何一个给定的atom在这6个空间中都有可能有或者有可能没有 有效的解释
+
+|                        |           |                                        |
+| ---------------------- | --------- | -------------------------------------- |
+| Space                  | Briefly   | Examples                               |
+|                        |           |                                        |
+| Property name          | Name      | WM_HINTS, WM_NAME, RGB_BEST_MAP, ...   |
+| Property type          | Type      | WM_HINTS, CURSOR, RGB_COLOR_MAP, ...   |
+| Selection name         | Selection | PRIMARY, SECONDARY, CLIPBOARD          |
+| Selection target       | Target    | FILE_NAME, POSTSCRIPT, PIXMAP, ...     |
+| Font property          |           | QUAD_WIDTH, POINT_SIZE, ...            |
+| **ClientMessage** type |           | WM_SAVE_YOURSELF, _DEC_SAVE_EDITS, ... |
+|                        |           |                                        |
+
+观察这个表，selection name只有三个，这和selection机制有极大的关系，实际上这三个selection也是X默认提供的三个selection；
 
 ### 关于selection
 
+（总结：selection叫做selection不是没有原因的，selection就是鼠标所选中的东西/粘贴板中的东西！）
+
 虽然上面的编程手册中有一节单独说了selection，但是我感觉我的翻译很有问题...我自己也看不懂译文；这里再结合其他的资料学习一下selection；
 
-selection是一种用于client之间交换数据的机制；每个selection都由一个Atom命名；可以存在很多个selection，并且Xserver都可以访问这些selection，但是每个selection都属于一个Xclient，并且被附在一个window上；（我的理解是：selection像一个运输船）
+selection是一种用于client之间交换数据的机制；每个selection都由一个Atom命名；
+
+可以存在很多个selection，并且Xserver随时都可以访问这些selection，但是每个selection都需要附在一个window上；
 
 selection在它的所有者以及请求者之间进行通信，所有者拥有selection中存储的数据，请求者想要得到这些数据；
 
@@ -2081,21 +2156,21 @@ selection在它的所有者以及请求者之间进行通信，所有者拥有se
 
 
 
-### 关于同步/异步
+虽然selection可以有很多个，每个都以atom命名，但是为了遵守inter-client约定，我们需要重点关注的有三个PRIMARY, SECONDARY, CLIPBOARD；这也是X默认提供的三个selection；其他的selection可以被自由的被用与client之间的私人通信;；
 
-之前总提到的事件是异步的，这个异步到底是什么？异步就是：我发送了请求或者事件，然后我继续忙我的，如果你那边处理完了，给我通知，我再回过头处理你给我的回馈；同步就是发给你请求，我就卡死在这里，一直等你给我回馈；
+PRIMARY：其实就是鼠标高亮选中的内容，按鼠标中键就能粘贴；
 
-对于大多数cs架构的软件来说，异步是基本的设计原则，原因不必多言；
+SECONDARY：没有查到响应的内容；
 
-当然为了debug，Xlib也提供了方法让我们能开启同步模式；
+CLIPBOARD：这个是我们熟悉的粘贴板，也就是ctrl C所复制的内容；
 
 
 
-### 关于Atom
 
-atom的存在是为了减轻CS架构下，数据传输的带宽压力；如果每次请求数据都要发一个字符串以告知想要的数据的名称，带宽压力就会变大，毕竟字符串或许会很长；
 
-因此X11选择将数据类型定义为一个更加简洁的东西，方便数据的传递；这个东西就是atom；
+
+
+
 
 
 
