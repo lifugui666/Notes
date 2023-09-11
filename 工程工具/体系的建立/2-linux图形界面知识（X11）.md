@@ -2052,6 +2052,10 @@ time成员是转换发生的时间，这个成员的值可以是时间戳，也�
 
 
 
+# Xlib接口手册
+
+https://tronche.com/gui/x/xlib/function-index.html
+
 
 
 # 实际使用的时候遇到的问题
