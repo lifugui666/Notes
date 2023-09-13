@@ -863,7 +863,74 @@ int main(int argc, char *argv[])
 
 
 
+# linux下的C语言计时器
 
+**请注意：linux并不是实时系统，因此想要实时定时器是不可能的...linux下的计时器不是绝对精确的**
+
+```c
+#include <sys/time.h>
+
+// 通过对itimerval结构体中的变量来实现对计时器的控制
+struct itimerval
+  {
+    /* Value to put into `it_value' when the timer expires.  */
+    // 当计时器到时间的时候，it_interval的值会被放到it_value
+    struct timeval it_interval;
+    /* Time to the next timer expiration.  */
+    // 计时器到期的时间
+    struct timeval it_value;
+  };
+
+struct timeval
+{
+  __time_t tv_sec;		/* Seconds.  */ //
+  __suseconds_t tv_usec;	/* Microseconds.  */
+};
+
+// 计时器到期之后会产生一个SIGALRM信号，我们可以使用处理信号的方式处理计时器；
+
+//使用案例
+#include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
+#include <stdlib.h>
+#include <signal.h>
+
+static int i;
+void signal_handler(int signam)
+{
+    i++;
+    printf("catch signal num is :%d\n",signam);
+    printf("i = %d\n",i);
+}
+
+void settimer()
+{
+    struct itimerval timer;
+    //设置之后，10s启动计时器；
+    timer.it_value.tv_sec = 10;
+    timer.it_value.tv_usec = 0;
+    //每1s产生一个事件；
+    timer.it_interval.tv_sec = 1;
+    timer.it_interval.tv_usec = 0;
+
+    setitimer(ITIMER_REAL,&timer,NULL);
+
+    signal(SIGALRM,signal_handler);
+}
+int main()
+{
+    settimer();
+    while (i < 20)
+    {
+        ;
+    }
+
+    return 0;
+}
+
+
+```
 
 
 

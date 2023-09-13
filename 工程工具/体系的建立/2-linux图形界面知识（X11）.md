@@ -2016,7 +2016,7 @@ time就是时间戳；也可以是**ConvertSelection**请求中的**CurrentTime*
 
 ##### 10.13.5 SelectionNotify Events
 
-当selection没有所有者时，Xserver回应**[ConvertSelection](https://tronche.com/gui/x/xlib/appendix/a.html#ConvertSelection)** protocol request的时候产生这个事件；当selection有所有者的时候这个事件会由selection的所有者调用**[XSendEvent()](https://tronche.com/gui/x/xlib/event-handling/XSendEvent.html)**产生；当selection被转换或者当selection转换无法被执行的时候，selection的所有者应该将这个事件发送给请求者；
+当selection没有所有者时，Xserver回应**[ConvertSelection](https://tronche.com/gui/x/xlib/appendix/a.html#ConvertSelection)** protocol request的时候产生selectionNotify事件；当selection有所有者的时候这个事件会由selection的所有者调用**[XSendEvent()](https://tronche.com/gui/x/xlib/event-handling/XSendEvent.html)**产生；当selection被转换或者当selection转换无法被执行的时候，selection的所有者应该将这个事件发送给请求者；
 
 如果在**[ConvertSelection](https://tronche.com/gui/x/xlib/appendix/a.html#ConvertSelection)** protocol request中将None指定为property，所有者应该选择一个property name，将请求的结果作为property存储在请求者的window上，然后发送一个**SelectionNotify** 给出该属性的实际名称；
 
@@ -2133,6 +2133,8 @@ x提供了6个不同的命名空间，任何一个给定的atom在这6个空间�
 观察这个表，selection name只有三个，这和selection机制有极大的关系，实际上这三个selection也是X默认提供的三个selection；
 
 ### 关于selection
+
+https://tronche.com/gui/x/icccm/sec-2.html  (这篇文章补充了很多manual中没有提到的东西)
 
 （总结：selection叫做selection不是没有原因的，selection就是鼠标所选中的东西/粘贴板中的东西！）
 
