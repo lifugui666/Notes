@@ -207,5 +207,16 @@ def configure_file(self):
     except Exception as e:
         print(e)
         # return False
+        
+        
+  ### 在另一个函数中
+    Qframe = self.Sensor.get_Raw_Data()                                                   
+    self.x_axis[x_Counter] = x
+    self.y_axis[Y_Counter] = y
+    self.data[:,x_Counter,Y_Counter] = Qframe
+    ## 这是数据的来源，在config_file()中，我们声明了self.data是一个netCDF的variable对象
+    ## 这个函数中，我们只需要针对这个self.data赋值，就可以将数据存在文件中
 ```
+
+netCDF有一个省心的地方在于，作为用户，我们并不需要控制数据向文件中的写入；我们只需要控制好variable变量中的内容就可以了；
 
