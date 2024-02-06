@@ -50,7 +50,7 @@ lifugui@LAPTOP-55A4PF8J:/tmp$ python3 ./main.py
 
 在上面这个例子中，我们在一个叫做main.py的文件中，调用了另一个叫做my_module.py的文件中的函数和变量；
 
-如果不想引入整个模块，也可以仅引入模块中的一部分：
+如果不想引入整个模块，也可以仅引入模块中的一部分： 	
 
 ```python
 # 对main.py文件进行一些修改
@@ -207,7 +207,7 @@ from .b import b
 
 ```python
 # test.py
-from my_pack
+import my_pack
 
 my_pack.a.fun_in_a()
 # 现在这个文件变回了我们最初没有写__init__.py时举的那个例子
@@ -224,11 +224,173 @@ lifugui@LAPTOP-55A4PF8J:/tmp$ python3 test.py
 
 
 
+## import xxx 和 from xxx import xxx的区别
+
+1. 如果使用`import module`，这是引入了一个模块，要调用模块中的内容，需要通过模块名去调用`module_name.func()`
+2. 如果使用`from module_name import func`，这是引入了module_name中的一部分，使用的时候直接调用`func()`即可	
+
+这里还是要以“一切都是对象”的理念理解，`import module`之后，我们引入了一个`module`对象，要引用`module`对象中包含的成员，自然要以`module.func`这种方式引用；
+
+而`from module import func`则是直接从`module`对象中引入了一个`func`对象，所以使用这种引用方法，在后续的代码中直接调用`func`即可；
 
 
 
+## python导入包的方式
+
+内容来源https://zhuanlan.zhihu.com/p/432503792
+
+### 1.  关于路径问题
+
+python会在三个地方搜索你想要引入的包：
+
+1. 当前执行的.py脚本所在的目录
+2. 环境变量PYTHONPATH所指出的目录
+3. 使用sys.path.append所添加的路径
 
 
+
+### 2. 相对导入 和 绝对导入
+
+相对导入和绝对导入**都有路径参照物**
+
+#### 2.1 绝对导入：
+
+**绝对导入的路径参照物是脚本**，所谓绝对导入其实就是从最顶层开始写
+
+例如：
+
+```python3
+└── D:\workplace\python\import_test
+    ├──main.py
+    ├── pack1
+    │   ├── module1.py
+
+# main.py
+from pack1 import module1
+```
+
+此时是可以正常运行的
+
+如果将main移动到pack1下面：
+
+```python3
+└── D:\workplace\python\import_test
+    ├── pack1
+    │   ├── module1.py
+    │   ├── main.py
+
+# main.py
+from pack1 import module1
+```
+
+ 此时不能执行，因为站在main.py的角度上，当前路径下没有一个叫做`pack1`的包
+
+
+
+#### 2.2 相对引入
+
+相对导入的参照物是当前的模块所在的位置
+
+例如：
+
+```python3
+# 文件结构
+└── D:\workplace\python\import_test
+    ├──main.py
+    ├── pack1
+    │   ├── module1.py
+    │   ├── module2.py
+
+# module1.py
+import pack1.module2 # 绝对导入
+import  module2 # 隐式相对导入 #!!! 由于隐式相对导入容易和显示绝对导入混淆，因此在PEP328之后取消了隐式相对导入，自此之后import只能用于绝对导入	
+from . import module2 # 显式相对导入 #从本文件所在的路径下引入模块module2
+
+# main.py
+from pack1 import module1 # 绝对导入
+```
+
+
+
+## 当存在复杂的相互引用时，应如何组织包的结构？
+
+
+
+问题：
+
+```shell
+PS D:\Thz related\THZ试验台代码\continue_scan\just_cnc> tree /f
+│  client_main.py
+│  readme.md
+│  server_main.py
+│  test_speed.py
+│  __init__.py
+│
+├─client
+│  │  client.py
+│  │  __init__.py
+│
+├─command
+│      command_check.py
+│      __init__.py
+│
+├─config
+│  │  my_config.py
+│  │  __init__.py
+│
+├─server
+│      ctrl_CNC.py
+│      server.py
+│      __init__.py
+```
+
+`client文件夹`中的`client.py`引用了`config文件夹`中的`my_config.py`,代码如下
+
+```python
+from socket import *
+from config.my_config import cnc_config
+import json
+import logging
+
+#...
+```
+
+这样写，在使用client_main.py调用的时候是没有问题的，因为在client_main.py的视角下，确实有一个叫做config的包，这个包里确实有my_config模块，而my_config模块里确实有cnc_config对象；
+
+但如果将just_cnc作为一个包调用，就会出现问题，因为此时，文件的层级结构如下:
+
+```shell
+PS D:\Thz related\THZ试验台代码\continue_scan> tree
+├─.vscode
+├─main.py # 这是程序的入口
+├─continue_scan
+│  ├─command
+│  ├─config
+│  │  └─__pycache__
+│  ├─datas
+│  ├─interactive
+│  └─test
+├─just_cnc
+│  ├─client
+│  │  └─__pycache__
+│  ├─command
+│  ├─config
+│  │  └─__pycache__
+│  ├─server
+│  └─__pycache__
+└─just_radar
+    ├─config
+    │  └─__pycache__
+    ├─datas
+    ├─Exceptions
+    │  └─__pycache__
+    ├─logs
+    ├─test
+    │  └─dll_demo
+    └─__pycache__
+```
+
+站在程序的入口再看，我们已经无法找到config这个包了...
 
 
 
