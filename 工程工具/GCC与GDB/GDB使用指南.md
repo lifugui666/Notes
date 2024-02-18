@@ -9,4 +9,3 @@ gcc -g test.c -o test
 # 如果要使用gcc记得在编译的时候加上-g命令
 
 ```
-
