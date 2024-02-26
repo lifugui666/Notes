@@ -470,10 +470,10 @@ void find(char * path, char *target)
         return;
     }
 
-    switch (st.type)
+    switch (st.type)//当前打开的文件，是一个普通文件还是一个目录文件？
     {
 
-        case T_FILE:
+        case T_FILE: // 如果是一个普通文件
             for( p = path + strlen(path); p >= path && *p != '/'; p-- )
             {
                 //这里是为了循环，找到最后一个文件的名称的index
@@ -486,12 +486,15 @@ void find(char * path, char *target)
             close(fd);
             break;
 
-        case T_DIR:
-            // 当前目录是点的时候
-
+        case T_DIR: // 是一个 目录文件 directory file
             strcpy(buf, path);
             p = buf + strlen(buf);
             *p++ = '/';
+            /*
+            从这里的read来看，directory file中存储着 这个目录 下面的所有文件的信息
+            每个文件信息都以一个 dirent 结构体的形式存储
+            如果确定了当前的fd是一个 directory file 的fd，可以使用read读取 	
+            */
             while( read(fd, &de, sizeof(de)) == sizeof(de) )
             {
                 if(strcmp(de.name,"..") == 0 || strcmp(de.name, ".") == 0) continue;
@@ -501,13 +504,10 @@ void find(char * path, char *target)
 
                 find(buf, target);
             }
-
             break;
         default:
             close(fd);
-            break;
-
-            
+            break; 
     }
 
 }
@@ -531,6 +531,107 @@ int main(int argc, char *argv[])
     exit(0);
 }
 
+```
+
+
+
+## exercise 6  xargs
+
+该lab要求实现xargs命令
+
+xargs这个命令我确实不是经常使用....
+
+xargs的工作逻辑如下：
+
+`echo abc | xargs mkdir` == `mkdir abc`
+
+也就是左侧的输出，会被当做右侧命令的参数；
+
+```shell
+$ echo "1\n2" | xargs -n 1 echo line
+line 1
+line 2
+$
+```
+
+实现思路：
+
+1. 从标准输入读取左侧的输出；
+2. 读取的时候要注意分割，遇到\n与\r要注意断开；
+3. 执行的时候使用fork，用子进程去执行
+
+代码如下：
+
+```c
+#include "kernel/param.h"
+#include "kernel/types.h"
+#include "user/user.h"
+/*
+ * 针对 形如 echo "1\n2"| xargs ehco hello的命令做解析
+ */
+
+
+int main(int argc, char * argv[])
+{
+
+        char *new_argv[MAXARG];
+
+        int cur_argv = 1;
+
+        /*
+        argc 是参数的数量
+        argv 是参数字符串
+        
+       	如果命令是 xargs echo hello，则 argc = 3
+        argv[0] xargs
+        argv[1] echo
+        argv[2] hello
+        */
+        for(cur_argv = 1; cur_argv <= argc - 1; cur_argv++)//这个for循环把xargs的参数全部读出来
+                new_argv[cur_argv - 1] = argv[cur_argv];
+
+        char ch;
+        char buf[128];
+        char *cur_buf = buf;
+        new_argv[cur_argv - 1] = buf;
+
+        while(read(0, &ch, sizeof(char)))
+        {
+                if (ch == ' ')
+                {
+                        *cur_buf = '\0';
+                        cur_buf++;
+                        new_argv[cur_argv] = cur_buf;
+                        cur_argv++;
+                }
+                else if( ch == '\n' || ch == '\r' )
+                {
+                        *cur_buf = '\0';
+                        new_argv[cur_argv] = 0;
+                        if( fork() ==0 )
+                        {
+                                exec(new_argv[0], new_argv);
+                                exit(0);
+                        }
+                        else
+                        {
+                                wait(0);
+                                /*
+                                这两句是用来重置参数指针的
+                                */
+                                cur_buf = buf;
+                                cur_argv = argc;
+                        }
+                }
+                else// 正常字符
+                {
+                        *cur_buf = ch;
+                        cur_buf ++;
+                }
+        }
+
+        exit(0);
+}
 ```
 
 
