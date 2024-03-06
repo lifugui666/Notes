@@ -19,7 +19,21 @@
  ## 32是 1<<SYS_read; SYS_read的数值可以在kernel/syscall.h中找到
  ```
 
-实现过程
+
+
+### hint
+
+Some hints:
+
+- Add `$U/_trace` to UPROGS in Makefile
+- Run make qemu and you will see that the compiler cannot compile `user/trace.c`, because the user-space stubs for the system call don't exist yet: add a prototype for the system call to `user/user.h`, a stub to `user/usys.pl`, and a syscall number to `kernel/syscall.h`. The Makefile invokes the perl script `user/usys.pl`, which produces `user/usys.S`, the actual system call stubs, which use the RISC-V `ecall` instruction to transition to the kernel. Once you fix the compilation issues, run trace 32 grep hello README; it will fail because you haven't implemented the system call in the kernel yet.
+- Add a `sys_trace()` function in `kernel/sysproc.c` that implements the new system call by remembering its argument in a new variable in the `proc` structure (see `kernel/proc.h`). The functions to retrieve system call arguments from user space are in `kernel/syscall.c`, and you can see examples of their use in `kernel/sysproc.c`.
+- Modify `fork()` (see `kernel/proc.c`) to copy the trace mask from the parent to the child process.
+- Modify the `syscall()` function in `kernel/syscall.c` to print the trace output. You will need to add an array of syscall names to index into.
+
+
+
+### 实现过程
 
 step0：需要在`user/user.h`中添加一个`trace()`
 
@@ -27,8 +41,6 @@ step0：需要在`user/user.h`中添加一个`trace()`
 //user/user.h
 int trace(int);
 ```
-
-
 
 step1： 需要在`user\usys.pl`中添加一个entry
 
@@ -63,7 +75,9 @@ step2： 在syscall.c和syscall.h中添加sys_trace
 #define SYS_fork 1;
 //...
 #define SYS_trace 22;
+```
 
+```c
 // syscall.c中
 extern uint64 sys_chdir(void);
 //....
@@ -75,20 +89,128 @@ static uint64 (*syscalls[])(void) = {
 [SYS_trace]   sys_trace,
 };
 // 这是一个名为syscalls的数组，数组中的内容是指针，指针是指向uint64 (void)的函数的；
+//....
+void
+syscall(void)
+{
+  int num;
+  struct proc *p = myproc();
+
+  num = p->trapframe->a7;
+  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+    p->trapframe->a0 = syscalls[num]();
+    //--------------------- 添加如下 ------------------
+    // 判断mask是不是命中了本次syscall，如果命中了本次syscall，就输出一下信息
+    if( (1 << num) & p->mask )
+    {
+            printf(
+                            "%d:syscall %s -> %d\n",
+                            p->pid,
+                            syscalls_name[num],
+                            p->trapframe->a0
+                            );
+    }
+    //-------------------------------------------------
+  } else {
+    printf("%d %s: unknown sys call %d\n",
+            p->pid, p->name, num);
+    p->trapframe->a0 = -1;
+  }
+}
 ```
+
+
 
 step3： 实现trace
 
 ```c
 // kernel/proc.h
 //...
-struct proc
+// Per-process state
+struct proc {
+  int mask;//添加一个mask，用于记录trace的目标
+  struct spinlock lock;
+
+  // p->lock must be held when using these:
+  enum procstate state;        // Process state
+  struct proc *parent;         // Parent process
+  void *chan;                  // If non-zero, sleeping on chan
+  int killed;                  // If non-zero, have been killed
+  int xstate;                  // Exit status to be returned to parent's wait
+  int pid;                     // Process ID
+
+  // these are private to the process, so p->lock need not be held.
+  uint64 kstack;               // Virtual address of kernel stack
+  uint64 sz;                   // Size of process memory (bytes)
+  pagetable_t pagetable;       // User page table
+  struct trapframe *trapframe; // data page for trampoline.S
+  struct context context;      // swtch() here to run process
+  struct file *ofile[NOFILE];  // Open files
+  struct inode *cwd;           // Current directory
+  char name[16];               // Process name (debugging)
+};
+```
+
+在`kernel/proc.c`的fork()函数中添加对mask的处理
+
+```c
+int
+fork(void)
 {
-    //...
-    int mask;
-    //...
+  int i, pid;
+  struct proc *np;
+  struct proc *p = myproc();
+
+  // Allocate process.
+  if((np = allocproc()) == 0){
+    return -1;
+  }
+
+  // Copy user memory from parent to child.
+  if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
+  np->sz = p->sz;
+
+  np->parent = p;
+
+  // copy saved user registers.
+  *(np->trapframe) = *(p->trapframe);
+
+  // Cause fork to return 0 in the child.
+  np->trapframe->a0 = 0;
+
+  // increment reference counts on open file descriptors.
+  for(i = 0; i < NOFILE; i++)
+    if(p->ofile[i])
+      np->ofile[i] = filedup(p->ofile[i]);
+  np->cwd = idup(p->cwd);
+
+  safestrcpy(np->name, p->name, sizeof(p->name));
+
+  pid = np->pid;
+
+  np->state = RUNNABLE;
+    
+  np->mask = p->mask;// 将父进程的mask也一并赋值给子进程
+
+  release(&np->lock);
+
+  return pid;
 }
 ```
+
+### 分析
+
+trace这个功能，主要依赖于`syscall`函数，系统调用的整体过程:
+
+ecall->syscall->真正的系统调用处理函数；
+
+其中syscall负责将请求发给真正的处理函数，所以syscall可以被认为是是一个"system call hub"...
+
+所以我们可以在syscall中设立一个过滤条件
 
 
 
