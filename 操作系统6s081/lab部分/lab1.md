@@ -157,48 +157,11 @@ struct proc {
 int
 fork(void)
 {
-  int i, pid;
-  struct proc *np;
-  struct proc *p = myproc();
-
-  // Allocate process.
-  if((np = allocproc()) == 0){
-    return -1;
-  }
-
-  // Copy user memory from parent to child.
-  if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
-    freeproc(np);
-    release(&np->lock);
-    return -1;
-  }
-  np->sz = p->sz;
-
-  np->parent = p;
-
-  // copy saved user registers.
-  *(np->trapframe) = *(p->trapframe);
-
-  // Cause fork to return 0 in the child.
-  np->trapframe->a0 = 0;
-
-  // increment reference counts on open file descriptors.
-  for(i = 0; i < NOFILE; i++)
-    if(p->ofile[i])
-      np->ofile[i] = filedup(p->ofile[i]);
-  np->cwd = idup(p->cwd);
-
-  safestrcpy(np->name, p->name, sizeof(p->name));
-
-  pid = np->pid;
-
-  np->state = RUNNABLE;
+  //...
     
   np->mask = p->mask;// 将父进程的mask也一并赋值给子进程
 
-  release(&np->lock);
-
-  return pid;
+  //...
 }
 ```
 
@@ -218,7 +181,150 @@ ecall->syscall->真正的系统调用处理函数；
 
 
 
+## sysinfo
 
+这个lab要求我们输出：
+
+1. 空闲的内存
+2. 进程数量
+
+
+
+### 实现过程
+
+1. 在makefile里添加`%U/_sysinfotest`
+
+2. 在user/user.h种添加sysinfo的用户接口
+
+   ```c
+   // user/user.h
+   struct stat;
+   struct rtcdate;
+   struct sysinfo;
+   
+   // system calls
+   int fork(void);
+   //....
+   int sysinfor(struct sysinfo *);
+   ```
+
+   note：C语言允许 结构体 先声明，再定义；`struct sysinfo`并不在`user.h`中声明，它在`kernel/sysinfo.h`中；
+
+   
+
+3. 在`usys.pl`中添加`sysinfo`的入口
+
+   ```perl
+   ##.............
+   entry("sysinfo");
+   ```
+
+4. 在`kernel/syscall.h`中添加SYS_sysinfo的系统调用编号
+
+   ```c
+   #define SYS_sysinfo 23
+   ```
+
+5. 在`kernel/syscall.c`中的`syscalls数组`中添加`sysinfo函数`，以及真正的系统调用函数`sys_sysinfo`的声明；
+
+   ```c
+   extern uint64 sys_sysinfo(void); // 先声明，真正的实现不在里
+   
+   static uint64 (*syscalls[])(void) = {
+   //.....
+   [SYS_sysinfo] sys_sysinfo,
+   };
+   ```
+
+6. 在`kernel/sysproc.c`中添加函数的实现
+
+   ```c
+   uint64 sys_sysinfo(void)
+   {
+           return 0;
+   }
+   ```
+
+
+
+7. 接下来的工作需要获得**空闲的内存大小**和**当前处于UNUSED状态的进程数量**
+
+   1. 在`kernel/kalloc.c`中，添加一个能够获取当前内存空间的函数
+
+      ```c
+      uint64 kfreemem(void)
+      {
+              struct run *r;
+              uint64 count = 0;
+              acquire(&kmem.lock);
+      
+              r = kmem.freelist;
+              while(r)
+              {
+                      r = r -> next;
+                     count ++;
+              }
+              release(&kmem.lock);
+              return count * PGSIZE;
+      }
+      ```
+
+   2. 在`kernel\sysproc.c`中，添加一个能够获取当前所有进程数量的函数
+
+      ```c
+      uint64 proc_num(void)
+      {
+              struct proc *p;
+              uint64 count = 0;
+              for(p = proc; p < &proc[NPROC]; p++)
+              {
+                      acquire(&p->lock);
+                      if(p->state != UNUSED)
+                      {
+                              count ++;
+                      }
+                      release(&p->lock);
+              }
+              return count;
+      }
+      ```
+
+   3. 在`kernel/defs.h`中添加`proc_num`和`kfreemem`的声明
+
+      ```c
+      // proc.c
+      int             cpuid(void);
+      //....
+      uint64          proc_num(void);// 新增
+      
+      // ...
+      
+      // kalloc.c
+      void*           kalloc(void);
+      void            kfree(void *);
+      void            kinit(void);
+      uint64          kfreemem(void);// 新增
+      ```
+
+   4. 在`kernel/sysproc.c`中将`sys_info`函数完善
+
+      ```c
+      uint64 sys_sysinfo(void)
+      {
+              uint64 info;
+              struct sysinfo kinfo;
+              struct proc *p = myproc();
+              if(argaddr(0, &info) < 0)
+                      return -1;
+              kinfo.freemem = kfreemem();
+              kinfo.nproc = proc_num();
+              if( copyout(p->pagetable, info, (char*)&kinfo, sizeof(kinfo))<0 )
+                      return -1;
+              return 0;
+      }
+      ```
+
+      
 
 
 
