@@ -35,3 +35,29 @@ b.o : b.c
 结果文件 : 生成结果文件需要的文件
 		生成结果文件需要执行的命令
 ```
+
+
+
+## makefile的隐式规则
+
+在看xv6系统的makefile时，发现了一种写法
+
+```shell
+OBJS = \
+  $K/entry.o \
+  $K/start.o \
+  # ...
+  $K/virtio_disk.o \
+  
+  # ...
+  $K/kernel: $(OBJS) $K/kernel.ld $U/initcode
+        $(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS)
+        $(OBJDUMP) -S $K/kernel > $K/kernel.asm
+        $(OBJDUMP) -t $K/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $K/kernel.sym
+```
+
+可见，$(OBJS)是一个依赖，但神奇的是这个makefile种并没有关于诸如`entry.o`的生成规则；但是从`make --debug=b`来看，这些`xx.o`文件确实被生成了；
+
+实际上这里的`entry.o`是由makefile的隐式规则生成的；
+
+如果makefile发现一个依赖不存在，而且也没有能生成依赖的规则；那么makefile就会尝试去"猜测"；
