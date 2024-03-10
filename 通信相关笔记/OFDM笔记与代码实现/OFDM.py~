@@ -1,0 +1,9 @@
+
+
+import numpy as np
+
+# region  参数定义
+number_of_subcarrier = 52
+N_FFT = 64 # FFT长度64
+
+# endregion
