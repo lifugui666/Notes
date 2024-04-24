@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-import pyocr
+import pytesseract
+from PIL import Image
  
  
 def show_image(desc, image):
@@ -31,22 +32,30 @@ def reg_area_color(image):
     return res_color
  
  
-img = cv2.imread('../data/bmw01.jpg')
+img = cv2.imread('./ori_pic.jpeg')
  
 # 调整图片大小
 img = cv2.resize(img, (1024, 768))
  
+# 在进行识别之前，应当首先确定车牌在一张图片中的范围
+# 1. 将图片变换到灰度空间，剔除颜色的影响
+# 2. 在没有颜色影响后，滤波就会变得比较简单
+# 3. 进行边缘检测
+
 # 灰度图
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-show_image('gray', gray)
+# show_image('灰度', gray)
  
 # 双边滤波
+# 双边滤波的好处在于，尽管自然图片临近像素点之间的变化比较平滑，但是仍要考虑到自然图片中，物体的边缘
+# 边缘的变化仍旧是相对较大的，如果认为边缘也是平滑的话，滤波得到的结果就是边缘被模糊
+# 双边滤波在边缘的权重有明显的分界
 blf = cv2.bilateralFilter(gray, 13, 15, 15)
-show_image('bilateralFilter', blf)
+# show_image('双边', blf)
  
 # 边缘检测
 edged = cv2.Canny(blf, 30, 200)
-show_image('canny', edged)
+# show_image('边缘', edged)
  
 # 寻找轮廓（图像矩阵，输出模式，近似方法）
 contours, _ = cv2.findContours(edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -66,7 +75,7 @@ for c in contours:
     if len(approx) == 4:
         # [参数]左上角纵坐标:左下角纵坐标,左上角横坐标:右上角横坐标
         crop_image = img[approx[3][0][1]:approx[0][0][1], approx[3][0][0]:approx[2][0][0]]
-        show_image('crop', crop_image)
+        # show_image('crop', crop_image)
         if 'blue' == reg_area_color(crop_image):
             screenCnt = approx
             break
@@ -74,7 +83,7 @@ for c in contours:
 if screenCnt is not None:
     # 根据四个顶点坐标对img画线(图像矩阵，轮廓坐标集，轮廓索引，颜色，线条粗细)
     cv2.drawContours(img, [screenCnt], -1, (0, 0, 255), 3)
-    show_image('contour', img)
+    # show_image('contour', img)
  
 """遮罩"""
 # 创建一个灰度图一样大小的图像矩阵
@@ -83,7 +92,7 @@ mask = np.zeros(gray.shape, np.uint8)
 cv2.drawContours(mask, [screenCnt], 0, 255, -1, )
 # 图像位运算进行遮罩
 mask_image = cv2.bitwise_and(img, img, mask=mask)
-show_image('mask_image', mask_image)
+# show_image('mask_image', mask_image)
  
 """图像剪裁"""
 # 获取车牌区域的所有坐标点
@@ -93,12 +102,12 @@ show_image('mask_image', mask_image)
 # 获取底部坐标
 (bottomx, bottomy,) = (np.max(x), np.max(y))
 # 剪裁
-cropped = gray[topx:bottomx, topy:bottomy]
-show_image('cropped', cropped)
+cropped = blf[topx:bottomx, topy:bottomy]
+# show_image('cropped', cropped)
  
 """OCR识别"""
-# 使用CPU预加载，不用GPU
-ocr = PaddleOCR(use_angle_cls=True, use_gpu=False, ocr_version='PP-OCRv3')
-text = ocr.ocr(cropped, cls=True)
-for t in text:
-    print(t[0][1])
+# print(pytesseract.get_languages(config=''))
+
+text = pytesseract.image_to_string(Image.fromarray(cropped))
+
+print("result " + text)
