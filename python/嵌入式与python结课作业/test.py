@@ -1,5 +1,3 @@
-# 实验环境：python 3.6 + opencv-python 3.4.14.51
-
 import cv2
 import numpy as np
 import os
@@ -10,13 +8,13 @@ from PIL import Image, ImageTk
 
 # 首先读取config文件，第一行代表当前已经储存的人名个数，接下来每一行是（id，name）标签和对应的人名
 id_dict = {}  # 字典里存的是id——name键值对
-Total_face_num = 999  # 已经被识别有用户名的人脸个数,
+Total_face_num = 0  # 已经被识别有用户名的人脸个数，默认设为0
 
 
 def init():  # 将config文件内的信息读入到字典中
     f = open('config.txt')
     global Total_face_num
-    Total_face_num = int(f.readline())
+    Total_face_num = len(f.readlines())
 
     for i in range(int(Total_face_num)):
         line = f.readline()
@@ -28,9 +26,11 @@ def init():  # 将config文件内的信息读入到字典中
 init()
 
 # 加载OpenCV人脸检测分类器Haar
-face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+print("load face cascade\n")
+face_cascade = cv2.CascadeClassifier("./haarcascade_frontalface_default.xml")
 
 # 准备好识别方法LBPH方法
+print("load lbph\n")
 recognizer = cv2.face.LBPHFaceRecognizer_create()
 
 # 打开标号为0的摄像头
@@ -41,13 +41,6 @@ H_size = 0.1 * camera.get(4)
 
 system_state_lock = 0  # 标志系统状态的量 0表示无子线程在运行 1表示正在刷脸 2表示正在录入新面孔。
 # 相当于mutex锁，用于线程同步
-
-
-'''
-============================================================================================
-以上是初始化
-============================================================================================
-'''
 
 
 def Get_new_face():
@@ -64,7 +57,8 @@ def Get_new_face():
     sample_num = 0  # 已经获得的样本数
 
     while True:  # 从摄像头读取图片
-
+        #debug
+        print("get img...")
         global success
         global img  # 因为要显示在可视化的控件内，所以要用全局的
         success, img = camera.read()
@@ -183,13 +177,6 @@ def write_config():
     f.close()
 
 
-'''
-============================================================================================
-以上是录入新人脸信息功能的实现
-============================================================================================
-'''
-
-
 def scan_face():
     # 使用之前训练好的模型
     for i in range(Total_face_num):  # 每个识别器都要用
@@ -283,13 +270,6 @@ def scan_face():
     return 0  # 全部过一遍还没识别出说明无法识别
 
 
-'''
-============================================================================================
-以上是关于刷脸功能的设计
-============================================================================================
-'''
-
-
 def f_scan_face_thread():
     # 使用之前训练好的模型
     # recognizer.read('aaa.yml')
@@ -340,13 +320,6 @@ def f_rec_face_thread():
     write_config()  # 修改配置文件
 
 
-#    recognizer.read('aaa.yml')  # 读取新识别器
-
-# global system_state_lock
-# print("锁被释放0")
-# system_state_lock = 0  # 修改system_state_lock,释放资源
-
-
 def f_rec_face():
     global system_state_lock
     print("当前锁的值为：" + str(system_state_lock))
@@ -364,18 +337,11 @@ def f_rec_face():
     # tk.Tk().update()
 
 
-#  system_state_lock = 0  # 修改system_state_lock,释放资源
 
 
 def f_exit():  # 退出按钮
     exit()
 
-
-'''
-============================================================================================
-以上是关于多线程的设计
-============================================================================================
-'''
 
 window = tk.Tk()
 window.title('Cheney\' Face_rec 3.0')   # 窗口标题
@@ -403,9 +369,9 @@ window.config(cursor="arrow")
 
 
 def video_loop():  # 用于在label内动态展示摄像头内容（摄像头嵌入控件）
-    # success, img = camera.read()  # 从摄像头读取照片
     global success
     global img
+    success, img = camera.read()  # 从摄像头读取照片
     if success:
         cv2.waitKey(1)
         cv2image = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)  # 转换颜色从BGR到RGBA
@@ -420,10 +386,4 @@ video_loop()
 
 #  窗口循环，用于显示
 window.mainloop()
-
-'''
-============================================================================================
-以上是关于界面的设计
-============================================================================================
-'''
 
