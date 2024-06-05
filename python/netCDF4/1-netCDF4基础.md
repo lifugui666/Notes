@@ -10,7 +10,9 @@ https://unidata.github.io/netcdf4-python/
 
 
 
-## 介绍
+
+
+## 建立netCDF4文件
 
 首先python使用的netCDF4库是一个基于C语言的库
 
@@ -219,4 +221,85 @@ def configure_file(self):
 ```
 
 netCDF有一个省心的地方在于，作为用户，我们并不需要控制数据向文件中的写入；我们只需要控制好variable变量中的内容就可以了；
+
+
+
+
+
+## 解析netCDF4文件
+
+这里使用一个实际使用的代码
+
+```python
+import netCDF4 as nc
+import numpy as np
+
+filename = "./202401142004_test"
+nc_filename = filename + ".nc"
+txt_filename = filename + ".txt"
+
+np.set_printoptions(threshold = np.inf)
+np.set_printoptions(linewidth = np.inf)
+
+f = open(txt_filename, "w")
+
+dataset = nc.Dataset(nc_filename)
+
+all_vars = dataset.variables.items()
+
+print("==============================================")
+print("variabbles 数量", len(all_vars))
+print("==============================================")
+
+all_vars_info = dataset.variables.items()
+print("==============================================")
+print("variables 类型", type(all_vars_info))
+print("==============================================")
+
+all_vars_info = list(all_vars_info)
+print("==============================================")
+print(all_vars_info)
+print("==============================================")
+
+
+xx = dataset.variables["xx"]
+yy = dataset.variables["yy"]
+datas = dataset.variables["data"]
+
+print("len of xx: ", len(xx))
+print("len of yy: ", len(yy))
+
+# test
+# f.write(str( (datas[:,30,10]).astype(int) ) )
+
+# print(datas[:,100,50])
+
+# debug
+# for y in yy:
+#     print("y",y)
+#     for x in xx:
+#         print("x",x)
+
+# for y in yy:
+#     if y.mask:
+#         continue
+#     for x in xx:
+#         if x.mask:
+#             continue
+#         tmp_str = "x: " + str(x) + " y: " + str(y) + " "
+#         tmp_str += ( str((datas[:,x,y]).astype(int)) + "\n" )
+#         f.write(tmp_str)
+
+
+for y in range(50):
+    for x in range(100):
+        tmp_str = "x: " + str(x) + " y: " + str(y) + " "
+        tmp_str += ( str((datas[:,x,y]).astype(int)) + "\n" )
+        f.write(tmp_str)
+
+f.close()
+
+
+
+```
 
