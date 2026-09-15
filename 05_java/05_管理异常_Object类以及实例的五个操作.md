@@ -171,6 +171,8 @@ catch可以捕捉多个异常
 Object类的equals方法默认等同于 == 
 重写equals方法来实现
 
+**注意！这里说的是 “重写” equals方法，重写的equals(Object o)的参数，也必须是Object o，否则就不是重写，而是重载了**
+
 ```java
 public class Student
 {
@@ -251,6 +253,8 @@ public class Student
 
 1. 类需要实现Cloneable接口表示自身支持克隆
 2. 重写Object类的clone方法（protected -> public）  直接使用super.clone() 即可实现
+
+**与 boolean equals(Object o) 类似；实现克隆接口的时候，也要注意，clone的返回值类型是 Object**
 
 ```java
 public class Student implements Cloneable {
