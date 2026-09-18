@@ -51,6 +51,7 @@ public     公有
 |默认      |    O     |    O    |      X      |    X   |
 |protected |    O     |    O    |      O      |    X   |
 |public    |    O     |    O    |      O      |    O   |
+
 **java中的包也是一个权限控制结构啊...如果不是private，只要两个类在一个包里，即使没有继承关系也能互相调用属性、方法**
 Class的权限，只能是public或默认
 属性和方法则四种权限都能用
