@@ -173,6 +173,36 @@ conn.close();
 
 
 
+### 动态查询
+
+实际使用中会出现，给定参数，然后使用参数构建SQL语句的需求；如果参数是null，那么通常代表条件不存在
+
+这种需求对sql语句的建立带来了一些麻烦，如果条件不存在，那么使用“?”做占位符，然后再通过PreparedStatement替换的做法也行不通，替换通常用来替换参数，而很难消去一个条件；
+
+```java
+StringBuilder sql = new StringBuilder("SELECT * FROM users WHERE 1=1");
+List<Object> params = new ArrayList<>();
+
+if (name != null && !name.isEmpty()) {
+    sql.append(" AND name = ?");
+    params.add(name);
+}
+if (age > 0) {
+    sql.append(" AND age >= ?");
+    params.add(age);
+}
+
+PreparedStatement ps = conn.prepareStatement(sql.toString());
+for (int i = 0; i < params.size(); i++) {
+    ps.setObject(i + 1, params.get(i));
+}
+ResultSet rs = ps.executeQuery();
+```
+
+思想是，先写where 1=1 条件，然后再根据参数的情况，逐条添加条件语句
+
+
+
 ## JDBC封装
 
 JDBC操作中，有一些操作明显是可以被封装的：
@@ -299,7 +329,7 @@ port=5432
 database=hr
 user=hr
 pass=hr
-    
+
 // java中读取的代码
 Properties p = new Properties();
 try {
@@ -311,6 +341,10 @@ String host = p.getProperty("host");
 String port = p.getProperty("port");
 String db = p.getProperty("database");
 ```
+
+**class.getResourceAsStream("xxx")方法，是从target下取文件，并不是从src下取文件**
+
+
 
 
 

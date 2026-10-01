@@ -15,7 +15,8 @@ SQL包含五种类型：
 ### 创建表：
 
 创建emp表
-``` sql
+
+```sql
 CREATE TABLE emp(
     empno INTEGER PRIMARY KEY, -- 主键 
     empname CHARACTER VARYING(16),
@@ -24,19 +25,23 @@ CREATE TABLE emp(
     hiredate DATE,
     sal NUMERIC,
     comm NUMERIC,
-    deptno INTEGER    
-); 
+    deptno INTEGER  
+);
 ```
+
 创建dept表
-``` sql
+
+```sql
 CREATE TABLE dept(
     deptno INTEGER PRIMARY KEY,
     dname CHARACTER VARYING(16),
     locid INTEGER
 );
 ```
+
 创建locs表
-``` sql
+
+```sql
 CREATE TABLE locs(
     locid INTEGER PRIMARY KEY,
     city CHARACTER VARYING(32),
@@ -47,53 +52,66 @@ CREATE TABLE locs(
 
 补充:约束
 主键是一种约束，约束一共有5种，除去主键约束外，还有4种约束；
+
 1. 主键约束：PRIMARY KEY 被主键约束的数据列具备一行数据的代表性，所以主键是唯一和非空的;一张表最多只能设置一个主键约束，但是这个约束可以同时作用再多个列上；如果出现类型 “学生 - 课程” 这种多对多的关系，一般借助第三张表，设置多个联合主键（如 学号 - 课号），这张表里，学号可以重复、课号可以重复，但 “学号-课号” 构成的联合主键的组合是不能有重复的；通常选用一个没有现实意义的数字做主键;
 2. 非空约束：NOT NULL 非空约束，这一列数据不允许为空;
 3. 检查约束：CHEKC 例如 CHEKC(sal >= 2000) 约束sal列数据必须满足大于2000的要求；
 4. 外键约束：FOREIGH KEY 约束该数据，必须来自于某个表的主键列；一旦真的设置了外键约束，必须先建立被依赖的表；一般不使用外键，外键可能产生环形依赖；
 5. 唯一约束：UNIQUE 约束列的数据必须是唯一的；一个表里允许使用多个唯一约束（主键约束只能使用一个）唯一约束允许NULL并且可以存在多个NULL（数据库中，任何两个NULL之间不相等，因此可以认为多个NULL之间也是唯一的）；
 
-
 ### 删除表：
+
 删除表，数据和表结构都会被删除
-``` sql
+
+```sql
 DROP TABLE emp;
 ```
 
 ### 截断表：
+
 截断，数据会被删除，但是表结构会被保留
-``` sql
+
+```sql
 TRUNCATE TABLE emp;
 ```
 
 ## DML 数据操作语句
+
 增删改
 
 ### 新增数据 insert
+
 第一种方法：
-``` sql
+
+```sql
 INSERT INTO 表名 VALUES(值1,值2,.....,值n); -- 按照表结构顺序插入，如果某列不需要值，用NULL进行占位
 -- 数字直接写，字符使用''单引号括住，时间也用''括住同时要符合时间格式'YYYY-MM-DD'
 ```
+
 第二种方法：
-``` sql
+
+```sql
 INSERT INTO 表名(列名1,列名3,列名5) VALUES(值1,值3,值5);
 -- 没有提及的列会被自动赋NULL
 ```
 
 ### 更新操作 update
-``` sql
+
+```sql
 UPDATE 表名 SET 列1=new值1, 列2=new值2,...,列n=new值n WHERE 条件;
 ```
 
 ### 删除数据 delete
-``` sql
+
+```sql
 DELETE FROM 表名 WHERE 条件;
 ```
 
 ## DQL 数据查询语句
+
 ### 基础的查询语法 SELECT
-``` sql
+
+```sql
 SELECT 列1, 列2, ..., 列n FROM 表;
 -- SELECT 除了具体的列，还可以写表达式
 -- 对于算式、表达式的结果，甚至是常规的数据列，都可以使用别名
@@ -110,20 +128,23 @@ SELECT 列1, 列2, ..., 列n FROM 表;
 -- COALESCE(arg1,arg2,...,argn) 返回第一个不是NULL的参数
 ```
 
-
 ### 对查询结果去重 DISTINCT
-``` sql
+
+```sql
 SELECT DISTINCT 列1,列2,...,列n FROM 表;
 -- 对列1~列n的结果的组合，进行去重
 ```
 
 ### 条件筛选 WHERE
-``` sql
+
+```sql
 -- 案例1：查询在30号部门工作的员工
 SELECT * FROM emp WHERE deptno = 30;
 ```
+
 WHERE条件本质上是一个逻辑表达式，包含： =, >, <, >=, <=, != 其中!=还可以写成<>;
 比较规则：
+
 1. 针对数字类型，就是自然规则
 2. 文本类型，通常使用的是 = 和 !=
 3. 时间类型，越未来的时间越大
@@ -133,7 +154,7 @@ WHERE条件本质上是一个逻辑表达式，包含： =, >, <, >=, <=, != 其
 
 特殊的筛选符号：
 
-``` sql
+```sql
 1. BETWEEN a AND b -- 表示[a,b]
 2. WHERE empname LIKE '%A%' -- 查询empname中包含字符A的行
 3. IN (a1,a2,a3,...,an) -- 表示在a1...an中
@@ -141,24 +162,26 @@ WHERE条件本质上是一个逻辑表达式，包含： =, >, <, >=, <=, != 其
 5. NOT IN -- 表示不在...中 NOT IN中不能有NULL值，有NULL则无法查询任何数据
 ```
 
-
-
 ### 对查询结果进行排序 ORDER BY
+
 ORDER BY 列\表达式\别名\结果集序号
 顺序可以使用：
 升序(自然顺序): 从小到大，默认也就是升序
 降序(从大到小): 关键字DESC，这个关键字必须写
 例:
 
-``` sql
+```sql
 SELECT * FROM emp WHERE deptno = 30 ORDER BY sal DESC;
 ```
+
 排序的时候是允许使用别名的
 排序可以使用多列进行排序，如：ORDER BY deptno DESC, sal ASC;
 
-### 分页、分段显示（方言，但是很重要）
+### 分页、分段显示 LIMIT OFFEST
 
-``` sql
+**方言，但是很重要**
+
+```sql
 LIMIT n OFFSET m
 -- 从m偏移开始，取n个值
 ```
@@ -166,27 +189,31 @@ LIMIT n OFFSET m
 从查询结果集的偏移量M的位置开始，查询n条数据
 这个功能可以用来做分页，因此很重要；
 
-
 ### 组函数 SUM\AVG\MAX\MIN\COUNT
-``` sql
+
+```sql
 SUM -- 求和
 AVG -- 求平均
 MAX MIN -- 求极限（最大最小值）
 COUNT -- 计数
 ```
+
 组函数特点：
+
 1. 组函数不能写在WHERE子句里
 2. HAVING 子句里只允许写 组函数
 
 COUNT函数的特点:
+
 1. 重复数据正常计算
 2. NULL不参与统计
 3. COUNT计数时要选非空列
 
-因为COUNT要对非空列使用，因此推荐对主键使用COUNT	
+因为COUNT要对非空列使用，因此推荐对主键使用COUNT
 
 ### 分组查询 GOURP BY
-``` sql
+
+```sql
 -- 例：查询各个部门的平均工资
 
 SELECT * deptno, AVG(sal)
@@ -194,7 +221,7 @@ FROM emp
 GROUP BY deptno;
 ```
 
-``` sql
+```sql
 -- 例：查询员工平均工资高于15000的部门编号和员工平均薪资
 
 SELECT deptno, AVG(sal)
@@ -210,7 +237,7 @@ LIMIT 2 OFFSET 0;
 
 GROUP BY和HAVING存在时，查询语句的执行顺寻为
 
-``` sql
+```sql
 -- 执行顺序：
 -- FROM        从哪些表中获取数据
 -- WHERE       筛选数据行（样本数据）
@@ -221,12 +248,11 @@ GROUP BY和HAVING存在时，查询语句的执行顺寻为
 -- LIMIT       多结果集进行分段显示
 ```
 
-
-
 ### 多表关联查询 JOIN
 
 等值链接，直观理解为“拼接”
-``` sql
+
+```sql
 -- 例：查询工资大约10000的员工 员工编号、员工名字、所在部门编号、所在部门名字
 
 -- 员工编号、名字、所在部门编号在emp表中
@@ -237,10 +263,12 @@ FROM emp e,
 WHERE e.sal > 10000
 ORDER BY e.empno;
 ```
+
 在这个例子中，经过JOIN之后的表，变成了emp和dept拼接的表，将e.deptno与d.deptno相同的 两张表的行，进行了拼接；
 
 等值查询可以做更多张表的关联查询，
-``` sql
+
+```sql
 -- 例：查询工作城市为Tokyo的员工名字与员工薪水
 
 -- 员工的名字和薪水在emp表中
@@ -263,7 +291,7 @@ dept表:
 deptno
   1
   2
-执行 ```emp e JOIN dept d ON (e.dept = d.dept)```后，由于empno = 3的这条数据，e.deptno无法与d.deptno匹配上，会被丢弃；
+执行 ``emp e JOIN dept d ON (e.dept = d.dept)``后，由于empno = 3的这条数据，e.deptno无法与d.deptno匹配上，会被丢弃；
 
 为了解决数据丢失的问题，需要使用外连接 LEFT JOIN\ RIGHT JOIN
 LEFT JOIN会保留左侧的表中的所有数据
@@ -272,18 +300,20 @@ RIGHT JOIN会保留右侧的表中的所有数据
 此外，还可以使用 自连接，自己跟自己进行连接
 
 ### 子查询
+
 跟子查询对应的是主查询
 
-``` sql
+```sql
 -- 例：查询月薪比Scott月薪高的员工
 SELECT *
 FROM emp
 WHERE sal > (SELECT sal FROM emp WHERE empname = 'Scott')
 ```
+
 最外层的查询是主查询，括号里的查询是子查询；这种查询也叫单行单列子查询
 子查询还有 多行子查询
 
-``` sql
+```sql
 -- 例: 查询哪些员工有下属，给出这些员工的信息
 
 SELECT *
@@ -292,11 +322,13 @@ WHERE empno IN (SELECT DISTINCT mgr FROM emp WHERE mgr IS NOT NULL);
 -- 如果写成 WHERE empno = (SELECT DISTINCT mgr FROM emp WHERE mgr IS NOT NULL);
 -- 会报错，因为(SELECT DISTINCT mgr FROM emp WHERE mgr IS NOT NULL)会返回多行
 ```
+
 #### ANY 和 ALL
+
 ANY代表集合中的任意一个
 ALL代表集合中的全部
 
-``` sql
+```sql
 > ALL() 表示 > MAX()
 >=ALL() 表示 >=MAX()
 < ALL() 表示 < MIN()
@@ -309,15 +341,11 @@ ALL代表集合中的全部
 = ANY() 表示 IN
 ```
 
-
-
 ### 临时视图
 
 可以为认为是一个多行多列的子查询
 
 例：查询自己月薪 比 所在部门 平均月薪高的 员工信息
-
-
 
 ### 相关子查询
 
@@ -335,9 +363,7 @@ WHERE e1.sal > (SELECT  AVG(e2.sal)
                 WHERE e2.deptno = e1.deptno);
 ```
 
-
-
-``` sql
+```sql
 -- 例：查询比自己职位平均薪资低的员工
 
 SELECT *
@@ -391,16 +417,14 @@ WHERE EXISTS (SELECT 1 FROM emp e2 WHERE e2.mgr = e1.empno);
 项目-员工-角色表；项目号PK 员工号PK 角色号PK 项目名称 参与者名字 参与者角色
 ```
 
-
-
 ## DCL 数据控制语句（不讲）
 
-
-
 ## TCL 事务控制语句
+
 事务的特性：
+
 1. 原子性：组成业务逻辑的操作不可继续拆解（比如付款--一个账户扣钱，另一个账号加钱，这两个逻辑组成事务，不能拆分）
 2. 一致性：这些DML操作，要么同时成功，要么同时失败，不存在部分成功，部分失败的情况
 3. 隔离性：两个不同的事物之间，应该是互不干扰的
 4. 持久性：事务成功之后，影响是持久的，数据应该有效存入数据库
-使用提交&回滚机制实现
+   使用提交&回滚机制实现
