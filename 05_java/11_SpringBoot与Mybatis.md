@@ -55,6 +55,115 @@ Service层中的函数则会组合多个DAO层的函数构成“事务”
 
 
 
+## 1.4 MVC框架里的数据流向
+
+### 1.4.1  View-->Controller  RESTful风格
+
+前端通过HTTP请求，向后端发送消息，HTTP请求的报文结构如下：
+
+```http
+POST /students/1?name=zhangsan HTTP/1.1     ← 请求行（含 URL 的路径+查询）
+Host: api.example.com                        ← 请求头
+Content-Type: application/json
+{"sname":"张三"}                              ← 请求体
+```
+
+报文中会标明，用什么类型的请求（post get put delete）去哪里进行操作（url）
+
+前端如果想要携带一些参数给后端，有以下几种方法：
+
+##### 1 通过URL携带参数
+
+这种方式所有类型的请求（GET POST PUT DELETE）都可以使用
+
+```http
+http://localhost:8080/info.do?account=123&passwd=456
+```
+
+服务端通过account和passwd形参获取参数值
+
+```java
+@RestController
+public class Test2Controller {
+	@GetMapping("/submitData.do")
+	public String getData1(String account, String password){
+		return "OK:"+account+":"+password;
+	}
+}
+```
+
+从上述的URL不难发现，GET类型的URL会把参数放在URL中以明文形式递交给后端，因此要避免使用GET提交敏感数据（比如密码），此外，URL有长度限制，因此也不能使用get方法提交文件（文件太大的话会超出URL长度限制）
+
+##### 2 通过Form URL encoded携带参数
+
+前端：利用报文体（body）传递数据
+
+服务端：直接在方法上设置同名参数  （少用）
+
+##### 3 通过Multpart Form
+
+前端：利用报文体(body)传递数据，允许上传文件
+
+服务端：直接在方法上设置同名参数（文件需要另外处理）
+
+##### 4 通过JSON （常用）
+
+前端：通过JSON提交数据，利用报文体（body）
+
+服务端：需要通过一个对象或者Map集合接受数据对象或map需要通过注解@RequestBody修饰
+
+```java
+// 声明一个VO
+// VO 映射视图层（View）的数据对象
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+public class LoginVO {
+	private String account;
+	private String password;
+}
+
+// 通过LoginVO对象 或 通过Map集合
+// 均可以获取json中的内容
+@RestController
+public class Test2Controller {
+	@PutMapping("/submitData.do")
+	public String getData3(@RequestBody LoginVO vo){
+		return vo+":"+vo.getAccount()+":"+vo.getPassword();
+	}
+    
+	@DeleteMapping("/submitData.do")
+	public String getData4(@RequestBody Map<String, Object> map){
+		return map+":"+map.get("account")+":"+map.get("password");
+	}
+}
+```
+
+##### 5 URL参数化（常用）
+
+前端：将参数作为URL的一部分
+
+服务端：通过注解@PathVariable绑定URL参数部分
+
+这样做的好处是，可以实现动态的请求
+
+```java
+@RestController
+public class Test2Controller {
+    // 使用/info/1111请求，empid就是1111
+    // 使用/info/2222请求，empid就是2222
+	@PostMapping("/info/{empid}")
+	public String getData5(@PathVariable Integer empid){
+		return "处理："+empid+"数据";
+	}
+}
+```
+
+
+
+
+
 # 2. 注解是怎么工作的？
 
 注解是Java的语法，并不是SpringBoot或Mybatis带来的新功能；
@@ -98,121 +207,16 @@ System.out.println(anno.value()); // hello
 
 不难想到，框架也是通过这种方法，读取了类和方法上写的注解，并且根据不同的注解进行了不同的操作，以实现功能；
 
-# 3. RESTful与SpringBoot 与 Mybatis
+# 3. SpringBoot 与 Mybatis
 
 SpringBoot脱胎于Spring框架与SpringMVC
 原始的Spring框架有大量的配置文件需要人工写，SpringBoot进一步精简了配置文件
 
 Mybatis则主要用于简化DAO层，不用再手写那么多代码；
 
-在学习SpringBoot和Mybatis之前，需要了解一下RESTful风格
-
-## 3.1 RESTful风格
-
-首先要明确，在网页服务器技术中，前端和后段通过http请求进行交互，http请求的报文如下例所示：
-
-```http
-POST /students/1?name=zhangsan HTTP/1.1     ← 请求行（含 URL 的路径+查询）
-Host: api.example.com                        ← 请求头
-Content-Type: application/json
-{"sname":"张三"}                              ← 请求体
-```
-
-http请求中会标明，用什么方法（post get put delete）去哪里进行操作（url）
-
-前端如果想要携带一些参数给后端，有以下几种方法：
-
-##### 3.1.1 通过URL携带参数
-
-这种方式所有类型的请求（GET POST PUT DELETE）都可以使用
-
-```http
-http://localhost:8080/info.do?account=123&passwd=456
-```
-
-服务端通过account和passwd形参获取参数值
-
-```java
-@RestController
-public class Test2Controller {
-	@GetMapping("/submitData.do")
-	public String getData1(String account, String password){
-		return "OK:"+account+":"+password;
-	}
-}
-```
-
-从上述的URL不难发现，GET类型的URL会把参数放在URL中以明文形式递交给后端，因此要避免使用GET提交敏感数据（比如密码），此外，URL有长度限制，因此也不能使用get方法提交文件（文件太大的话会超出URL长度限制）
-
-##### 3.1.2 通过Form URL encoded携带参数
-
-前端：利用报文体（body）传递数据
-
-服务端：直接在方法上设置同名参数  （少用）
-
-##### 3.1.3 通过Multpart Form
-
-前端：利用报文体(body)传递数据，允许上传文件
-
-服务端：直接在方法上设置同名参数（文件需要另外处理）
-
-##### 3.1.4 通过JSON （常用）
-
-前端：通过JSON提交数据，利用报文体（body）
-
-服务端：需要通过一个对象或者Map集合接受数据对象或map需要通过注解@RequestBody修饰
-
-```java
-// 声明一个VO
-// VO 映射视图层（View）的数据对象
-@Setter
-@Getter
-@AllArgsConstructor
-@NoArgsConstructor
-public class LoginVO {
-	private String account;
-	private String password;
-}
-
-// 通过LoginVO对象 或 通过Map集合
-// 均可以获取json中的内容
-@RestController
-public class Test2Controller {
-	@PutMapping("/submitData.do")
-	public String getData3(@RequestBody LoginVO vo){
-		return vo+":"+vo.getAccount()+":"+vo.getPassword();
-	}
-    
-	@DeleteMapping("/submitData.do")
-	public String getData4(@RequestBody Map<String, Object> map){
-		return map+":"+map.get("account")+":"+map.get("password");
-	}
-}
-```
-
-##### 3.1.5 URL参数化（常用）
-
-前端：将参数作为URL的一部分
-
-服务端：通过注解@PathVariable绑定URL参数部分
-
-这样做的好处是，可以实现动态的请求
-
-```java
-@RestController
-public class Test2Controller {
-    // 使用/info/1111请求，empid就是1111
-    // 使用/info/2222请求，empid就是2222
-	@PostMapping("/info/{empid}")
-	public String getData5(@PathVariable Integer empid){
-		return "处理："+empid+"数据";
-	}
-}
-```
 
 
-
-## 3.2 SpringBoot
+## 3.1 SpringBoot
 
 SpringBoot有两个核心概念，IOC和AOP
 
@@ -222,7 +226,7 @@ AOP解决Service层中的函数大多流程一致，不同的只是一两行关�
 
 
 
-### 3.2.1 IOC 控制反转
+### 3.1.1 IOC 控制反转
 
 在没有IOC之前，代码的结构是正向依赖的
 
@@ -422,17 +426,17 @@ public class StudentController {
 
 
 
-### 3.2.2 AOP 面向切面
+### 3.1.2 AOP 面向切面
 
 使用动态代理模式实现
 
 
 
-## 3.3 Mybatis
+## 3.2 Mybatis
 
 **Mybatis确实让Java操作数据库简单了很多，但即使如此，Mybatis提供的所有功能，还是通过JDBC实现的，可以认为Mybatis只是对之前学的那种DAO层写法的封装，简化了程序员的工作**
 
-### 3.3.1 mapper
+### 3.2.1 mapper
 
 使用Mybatis之后，与数据库进行交互的层一般叫做mapper层，**现在只需要写一个interface即可，不用实现**，Mybatis会自动帮你在内存中创建对应的匿名对象，这些都不再是你需要关心的
 
@@ -459,7 +463,7 @@ public interface EmpMapper {
 1. 使用@Insert、@Select、@Update、@Delete注解
 2. 使用xml配置文件
 
-### 3.3.2. 使用注解操作数据库（不常用）
+### 3.2.2. 使用注解操作数据库（不常用）
 
 Mybatis允许直接把SQL语句写在注解中
 
@@ -490,7 +494,7 @@ public interface EmpMapper {
 
 不过这样写，有一个弊端，太长的sql语句，写在一行上，阅读难度过高...Mybatis还提供了另一一种写法
 
-### 3.3.3. 使用配置文件操作数据库（常用）
+### 3.2.3. 使用配置文件操作数据库（常用）
 
 使用XML配合Mapper接口也可以实现对数据库的操作：在mapper中声明函数，然后在XML中写SQL
 
@@ -597,25 +601,26 @@ insert语句一般会插入一条新记录，此时，新纪录的key word有两
 2. 如果数据库的key没有设置为自增，则需要手动给主键赋值
 
 ```xml
-    <!-- 如果是自增主键，在插入数据时不需要提供主键值，由数据库表自动维护主键 -->
-    <!-- 如果需要返回本次新增的主键值，不能通过方法返回值获取，将自增的主键值绑定给参数的主键属性上，本案例中是EmpPO的empno属性-->
-    <!--
-            useGeneratedKeys="true"   使用数据库自生成的主键
-            keyColumn="empno"   声明数据库中主键列是empno
-            keyProperty="empno"  声明使用EmpPO（参数）中的 empno 来接收 自生成的主键值
-            当方法执行完毕后，访问参数对象的empno属性，即可得到本次自增长的主键值
-    -->
-    <!--
-    <insert id="insertNewEmp" parameterType="com.neusoft.po.EmpPO" useGeneratedKeys="true" keyColumn="empno" keyProperty="empno">
-        INSERT INTO emp(ename,job,mgr,hiredate,sal,comm,deptno)
-        VALUES(#{ename}, #{job}, #{mgr}, #{hiredate}, #{sal}, #{comm}, #{deptno})
-    </insert>
-    -->
+<!-- 如果是自增主键，在插入数据时不需要提供主键值，由数据库表自动维护主键 -->
+<!-- 如果需要返回本次新增的主键值，不能通过方法返回值获取，将自增的主键值绑定给参数的主键属性上，本案例中是EmpPO的empno属性-->
+<!--
+        useGeneratedKeys="true"   使用数据库自生成的主键
+        keyColumn="empno"   声明数据库中主键列是empno
+        keyProperty="empno"  声明使用EmpPO（参数）中的 empno 来接收 自生成的主键值
+        当方法执行完毕后，访问参数对象的empno属性，即可得到本次自增长的主键值
+-->
 
-    <insert id="insertNewEmp" parameterType="com.neusoft.po.EmpPO">
-        INSERT INTO emp(empno, ename,job,mgr,hiredate,sal,comm,deptno)
-        VALUES(#{empno}, #{ename}, #{job}, #{mgr}, #{hiredate}, #{sal}, #{comm}, #{deptno})
-    </insert>
+<!--自增主键版-->
+<insert id="insertNewEmp" parameterType="com.neusoft.po.EmpPO" useGeneratedKeys="true" keyColumn="empno" keyProperty="empno">
+    INSERT INTO emp(ename,job,mgr,hiredate,sal,comm,deptno)
+    VALUES(#{ename}, #{job}, #{mgr}, #{hiredate}, #{sal}, #{comm}, #{deptno})
+</insert>
+
+<!--普通主键版-->
+<insert id="insertNewEmp" parameterType="com.neusoft.po.EmpPO">
+    INSERT INTO emp(empno, ename,job,mgr,hiredate,sal,comm,deptno)
+    VALUES(#{empno}, #{ename}, #{job}, #{mgr}, #{hiredate}, #{sal}, #{comm}, #{deptno})
+</insert>
 ```
 
 insert操作有时会面临一个问题：
@@ -694,9 +699,169 @@ public interface EmpMapper {
     </delete>
 ```
 
+# 4. 异常处理
 
 
-# 创建SpringBoot+Mybatis项目构建
+
+## 4.1 全局异常处理
+
+作用：通过全局响应方式，将验证未通过的异常返回给前端
+
+步骤：
+
+* 建立一个Controller
+* 使用注解`@RestControllerAdvice`，声明这个Controller是全局相应的
+* 在这个Controller里写异常处理handler，handler使用注解`@ExceptionHandler(...)`声明这个handler接受的异常类型
+* 注意使用`@ExceptionHandler(Exception.class)`进行兜底，防止漏掉异常
+
+```java
+@RestControllerAdvice //全局注解
+public class GlobalExceptionController {
+    //专门进行验证的异常，通过全局响应方式，将验证未通过的响应给客户端
+    //如果发生了RuntimeException就会通过该方法向客户端进行响应
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseResult handleException(RuntimeException e) {
+        String message = e.getMessage() == null || e.getMessage().isBlank() ? "服务器繁忙" : e.getMessage();
+
+        return ResponseResult.isFail(e.getMessage());
+    }
+    
+    // 用于处理数据校验产生的异常
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseResult handleException(MethodArgumentNotValidException e)
+    {
+        String message = e.getBindingResult().getFieldError() != null
+                ? e.getBindingResult().getFieldError().getDefaultMessage()
+                : "参数校验失败";
+        return ResponseResult.notValidated(message);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseResult handleException(Exception e) {
+        String message = e.getMessage() == null || e.getMessage().isBlank() ? "服务器繁忙" : e.getMessage();
+        return ResponseResult.isFail(e.getMessage());
+    }
+}
+
+```
+
+这样写了之后就不用再单独处理每个运行时异常了，反正有运行时异常的话软件随便往出抛，都会被集中处理掉
+
+
+
+## 4.2 数据校验
+
+### 4.2.1 数据校验
+
+1. 引入校验框架了`spring-boot-starter-validation`组件
+
+2. 使用如下所示的注解对VO中的数据进行标注
+
+   ```java
+   @NotNull(message = "")  //不能是null
+   
+   @NotBlank()//不能是null或空字符串
+   
+   @NotEmpty()//要求数组和集合不能是空集合，数组或集合长度大于0
+   
+   @Size(min = 2,max =20,message = "员工的名字字符数应该在2-20之间")//约束文本的字符个数
+   
+   @Past //当前日期之前
+   @Future//只能选择未来日期
+   
+   @Pattern //允许使用正则约束格式
+   
+   @Min(value = 5000,message = "员工薪资不得低于5000")
+   @Max(value = 50000,message = "员工薪资不得高于50000")//约束数字的取值范围
+   ```
+
+3. 在Controller层通过注解启动合法性检查
+
+   ```java
+   public ResponseResult addEmp(@Validated @RequestVBody EmpVO vo){
+       //@Validated表明对传入数据进行校验
+   }
+   ```
+
+4. 通过全局异常处理拦截没有通过校验产生的异常
+
+   ```java
+   @ExceptionHandler(MethodArgumentNotValidException.class)
+   public ResponseResult handleException(MethodArgumentNotValidException e)
+   {
+       String message = e.getBindingResult().getFieldError() != null
+               ? e.getBindingResult().getFieldError().getDefaultMessage()
+               : "参数校验失败";
+       return ResponseResult.notValidated(message);
+   }
+   ```
+
+   
+
+
+
+### 4.2.2 分组数据校验
+
+普通数据校验的问题点：不同场景下对同一个数据的要求是不一样的，例如：
+
+​	新增数据：ID一般为空，因为还没有插入到数据库里，还不知道其主键ID是多少
+
+​	根据ID查找、修改、删除：ID不允许为空
+
+针对这个问题，通过**约束groups引入组来控制约束在不同业务中的体现**
+
+```java
+public class EmpVO  {
+    
+	@NotNull(groups = {UPDATE.class}, message = "员工编号不能为NULL")
+	private Integer empno;
+
+	@NotBlank(groups = {ADD.class, UPDATE.class}, message = "员工名字需要有字符") 
+	@Size(groups = {ADD.class, UPDATE.class}, min = 2, max = 20, message = "员工的名字字符个数应该在2~20之间")
+	private String ename;
+	private String job;
+	private Integer mgr;
+
+	@Past
+	private Date hiredate;
+
+	@Min(groups = {ADD.class, UPDATE.class}, value = 5000, message = "员工薪资不得低于5000")
+	@Max(groups = {ADD.class, UPDATE.class}, value = 50000, message = "员工薪资不得高于50000")
+	private Integer sal;
+
+	private Integer comm;
+	private Integer deptno;
+
+	public interface ADD{}   //新增ADD组
+	public interface UPDATE{}  //修改UPDATE组
+
+}
+```
+
+
+
+通过在Controller层里添加`(@Validated(EmpVO.ADD.class)`表明应当使用哪个组的规则
+
+```java
+@RestController
+@RequiredArgsConstructor
+public class EmpController {
+    //......
+    
+	@PutMapping("/emp")
+	public ResponseResult addEmp(@Validated(EmpVO.ADD.class) @RequestBody EmpVO vo){
+		//@Validated 表示对提交的数据进行验证   EmpVO.ADD.class使用的ADD组的规则
+        
+		return ResponseResult.isOK(1);
+	}
+    
+    //......
+}
+```
+
+
+
+# 5. 创建SpringBoot+Mybatis项目构建
 
 ## 构建项目
 
@@ -791,18 +956,27 @@ takuchuu-lee@takuchuu-lee-ThinkPad-A285:~/下载/demo$ tree
         <artifactId>commons-dbcp2</artifactId>
         <version>2.12.0</version>
     </dependency>
+    
+    <!-- 校验框架 -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    
 </dependencies>
 ```
 
 ```shell
-# 这个配置中的插件分别为
+# web服务框架
 1. Spring Web # 提供RESTful风格接口、内嵌的web服务器（通常是汤姆猫）、一些静态资源支持
 2. lombok # 提供@Getter、@Setter、@RequiredArgsConstructor等 注解
-# 接下来的都是Mybatis的插件
+# Mybatis的插件
 3. spring-boot-starter-jdbc # jdbc插件
 4. mybatis-spring-boot-starter # Mybatis插件
 5. postgresql # 数据库驱动
 6. commons-dbcp2 # 连接池
+# 校验框架
+7. spring-boot-starter-validation # 全局校验框架
 ```
 
 ### Mybatis所需的一些配置
