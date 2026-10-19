@@ -6,8 +6,8 @@ package级别的封装：
        基础信息模块（员工、组织、职位） --- com.xxxx.base
        薪资模块                         --- com.xxxx.salary
        时间模块                         --- com.xxxx.time
-       员工关系模块                     --- com.xxxx.relationship
-       .....                            -- ......
+       员工关系模块                  --- com.xxxx.relationship
+       .....                                  --- ......
 
     针对模块，我们希望能做到：高内聚，低耦合
 

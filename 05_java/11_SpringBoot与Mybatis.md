@@ -498,6 +498,8 @@ public interface EmpMapper {
 
 使用XML配合Mapper接口也可以实现对数据库的操作：在mapper中声明函数，然后在XML中写SQL
 
+
+
 #### 1. 使用XML实现select
 
 使用一个类包装sql要使用的参数、以及返回值
@@ -699,6 +701,16 @@ public interface EmpMapper {
     </delete>
 ```
 
+
+
+### 3.3  向XML中传参
+
+向XML中传参有2中方法
+
+第一种是使用一个类，将数据包起来，这样只传一个类的对象即可
+
+第二种是使用@Param注解，这种方式可以传多个参数
+
 # 4. 异常处理
 
 
@@ -749,9 +761,9 @@ public class GlobalExceptionController {
 
 
 
-## 4.2 数据校验
+# 5. 数据校验
 
-### 4.2.1 数据校验
+### 5.2.1 数据校验
 
 1. 引入校验框架了`spring-boot-starter-validation`组件
 
@@ -775,7 +787,7 @@ public class GlobalExceptionController {
    @Max(value = 50000,message = "员工薪资不得高于50000")//约束数字的取值范围
    ```
 
-3. 在Controller层通过注解启动合法性检查
+3. 在Controller层通过注解启动合法性检查（使用`@Validated`
 
    ```java
    public ResponseResult addEmp(@Validated @RequestVBody EmpVO vo){
@@ -798,9 +810,7 @@ public class GlobalExceptionController {
 
    
 
-
-
-### 4.2.2 分组数据校验
+### 5.2.2 分组数据校验
 
 普通数据校验的问题点：不同场景下对同一个数据的要求是不一样的，例如：
 

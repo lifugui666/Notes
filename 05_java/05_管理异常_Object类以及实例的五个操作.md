@@ -249,7 +249,7 @@ public class Student
 
 ## 4. 实例克隆
 
-步骤：
+xxxxxxxxxx // 懒汉单例public class LazySingleton{    private statici LazySingleton instance;    private LazySingleton(){}​    public static LazySingleton getInstance()    {        if(instance == null)        {            synchronized(LazySingleton.class)            {                if(instance == null)                {                    instance = new LazySingleton();                }            }        }        return instance;    }}​java
 
 1. 类需要实现Cloneable接口表示自身支持克隆
 2. 重写Object类的clone方法（protected -> public）  直接使用super.clone() 即可实现
